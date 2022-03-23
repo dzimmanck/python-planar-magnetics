@@ -45,7 +45,7 @@ class Arc:
         return Arc(self.start + other, self.mid + other, self.end + other)
 
 
-def create_arc_from_polar(radius, start_angle, end_angle):
+def arc_from_polar(radius, start_angle, end_angle):
     mid_angle = 0.5 * (start_angle + end_angle)
     start = Point(radius * math.cos(start_angle), radius * math.sin(start_angle))
     mid = Point(radius * math.cos(mid_angle), radius * math.sin(mid_angle))
@@ -63,7 +63,12 @@ class Polygon:
         return Polygon([point + other for point in self.points], self.layer)
 
     def __str__(self):
-        points = "".join([f"{point}" for point in self.points])
+        points = "".join(
+            [
+                f"{point}" if isinstance(point, Arc) else f"(xy {point})"
+                for point in self.points
+            ]
+        )
         width = 0
         expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {width}) (fill solid) (tstamp {self.tstamp}))"
         return expression

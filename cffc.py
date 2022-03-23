@@ -1,8 +1,130 @@
 import math
-from primitives import Point, Polygon, create_arc_from_polar
+from primitives import Point, Polygon, arc_from_polar
 
 
-class Turn:
+class TopTurn:
+    """Defines a top layer turn of a CFFC inductor
+    """
+
+    def __init__(
+        self,
+        at,
+        inner_radius: float,
+        outer_radius: float,
+        gap: float,
+        termination_width: float,
+        viastrip_angle: float,
+        viastrip_width: float,
+        layer: str,
+    ):
+
+        # calculate the gap angles
+        inner_gap_angle = math.asin(gap / inner_radius)
+        outer_gap_angle = math.asin(gap / outer_radius)
+
+        # angle from "at" to the corner of the termination
+        term_angle = math.asin(termination_width / outer_radius)
+
+        termination_arc = arc_from_polar(inner_radius, -term_angle / 2, term_angle / 2)
+
+        # create the inner arc
+        inner_arc = arc_from_polar(
+            inner_radius + viastrip_width,
+            term_angle / 2,
+            2 * math.pi - term_angle / 2 - inner_gap_angle - viastrip_angle,
+        )
+
+        via_arc = arc_from_polar(
+            inner_radius,
+            2 * math.pi - term_angle / 2 - inner_gap_angle - viastrip_angle,
+            2 * math.pi - term_angle / 2 - inner_gap_angle,
+        )
+
+        # create outer arc
+        outer_arc = arc_from_polar(
+            outer_radius,
+            2 * math.pi - term_angle / 2 - outer_gap_angle,
+            term_angle / 2,
+        )
+
+        # create termination
+        termination = [
+            Point(outer_radius + 5, termination_width / 2),
+            Point(outer_radius + 5, -termination_width / 2),
+            Point(outer_radius * math.cos(term_angle / 2), -termination_width / 2),
+        ]
+
+        # create the polygon
+        points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
+        self.polygon = Polygon(points, layer) + at
+
+    def __str__(self):
+
+        return self.polygon.__str__()
+
+
+class BottomTurn:
+    """Defines a bottom layer turn of a CFFC inductor
+    """
+
+    def __init__(
+        self,
+        at,
+        inner_radius: float,
+        outer_radius: float,
+        gap: float,
+        termination_width: float,
+        viastrip_angle: float,
+        viastrip_width: float,
+        layer: str,
+    ):
+
+        # calculate the gap angles
+        inner_gap_angle = math.asin(gap / inner_radius)
+        outer_gap_angle = math.asin(gap / outer_radius)
+
+        # angle from "at" to the corner of the termination
+        term_angle = math.asin(termination_width / outer_radius)
+
+        termination_arc = arc_from_polar(inner_radius, term_angle / 2, -term_angle / 2)
+
+        # create the inner arc
+        inner_arc = arc_from_polar(
+            inner_radius + viastrip_width,
+            2 * math.pi - term_angle / 2,
+            term_angle / 2 + inner_gap_angle + viastrip_angle,
+        )
+
+        via_arc = arc_from_polar(
+            inner_radius,
+            term_angle / 2 + inner_gap_angle + viastrip_angle,
+            term_angle / 2 + inner_gap_angle,
+        )
+
+        # create outer arc
+        outer_arc = arc_from_polar(
+            outer_radius,
+            term_angle / 2 + outer_gap_angle,
+            2 * math.pi - term_angle / 2,
+        )
+
+        # create termination
+        termination = [
+            Point(outer_radius + 5, -termination_width / 2),
+            Point(outer_radius + 5, termination_width / 2),
+            Point(outer_radius * math.cos(term_angle / 2), termination_width / 2),
+        ]
+
+        # create the polygon
+        points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
+        self.polygon = Polygon(points, layer) + at
+
+    def __str__(self):
+
+        return self.polygon.__str__()
+
+
+class InnerTurn:
     """Defines a middle layer turn of a CFFC inductor
     """
 
@@ -12,7 +134,7 @@ class Turn:
         inner_radius: float,
         outer_radius: float,
         gap: float,
-        angle: float,
+        rotation: float,
         viastrip_angle: float,
         viastrip_width: float,
         layer: str,
@@ -21,19 +143,30 @@ class Turn:
             outer_radius > inner_radius
         ), "outer radius must be greater than inner radius"
 
-        # create the vias arcs
-        a = math.asin(gap / 2 / inner_radius)
-        b = viastrip_angle / 2
-        c = math.asin(gap / 2 / outer_radius)
-        start_via_arc = create_arc_from_polar(inner_radius, a + angle, b + angle)
-        inner_arc = create_arc_from_polar(
-            inner_radius + viastrip_width, b + angle, 2 * math.pi - b + angle
+        # calculate the gap angles
+        inner_gap_angle = math.asin(gap / inner_radius)
+        outer_gap_angle = math.asin(gap / outer_radius)
+
+        # create the arcs
+        start_via_arc = arc_from_polar(
+            inner_radius,
+            inner_gap_angle / 2 + rotation,
+            inner_gap_angle / 2 + viastrip_angle + rotation,
         )
-        end_via_arc = create_arc_from_polar(
-            inner_radius, 2 * math.pi - b + angle, 2 * math.pi - a + angle
+        inner_arc = arc_from_polar(
+            inner_radius + viastrip_width,
+            inner_gap_angle / 2 + viastrip_angle + rotation,
+            2 * math.pi - inner_gap_angle / 2 - viastrip_angle + rotation,
         )
-        outer_arc = create_arc_from_polar(
-            outer_radius, 2 * math.pi - c + angle, c + angle
+        end_via_arc = arc_from_polar(
+            inner_radius,
+            2 * math.pi - inner_gap_angle / 2 - viastrip_angle + rotation,
+            2 * math.pi - inner_gap_angle / 2 + rotation,
+        )
+        outer_arc = arc_from_polar(
+            outer_radius,
+            2 * math.pi - outer_gap_angle / 2 + rotation,
+            outer_gap_angle / 2 + rotation,
         )
 
         # create the polygon
@@ -52,47 +185,83 @@ class Winding:
         outer_radius: float,
         number_turns: int,
         gap: float = 0.5,
+        termination_width: float = None,
     ):
 
-        # calculate the angle we can allocate to the via transitions
-        inner_circumfrance = 2 * math.pi * inner_radius
+        if termination_width is None:
+            termination_width = outer_radius - inner_radius
 
-        viastrip_angle = (
-            4
-            * math.pi
-            * (inner_circumfrance - (number_turns / 2) * gap)
-            / inner_circumfrance
-        ) / number_turns
+        # calculate other useful angles
+        inner_gap_angle = math.asin(gap / inner_radius)
+        term_angle = math.asin(termination_width / outer_radius)
+
+        # calculate the angle we can allocate to the via transitions
+        circumfrance_for_transitions = (
+            2 * math.pi - term_angle
+        ) * inner_radius - number_turns * gap
+        angle_for_transitions = circumfrance_for_transitions / inner_radius
+        viastrip_angle = angle_for_transitions / (number_turns - 1)
+
+        # calculate other useful angles
+        inner_gap_angle = math.asin(gap / inner_radius)
+        term_angle = math.asin(termination_width / outer_radius)
 
         # calculate the required rotation per turn
-        rotation = math.asin(gap / 2 / inner_radius) + viastrip_angle / 2
+        initial_rotation = (term_angle + inner_gap_angle) / 2
+        rotation_per_turn = viastrip_angle + inner_gap_angle
 
         # create the top and bottom turns
-        top = Turn(at, inner_radius, outer_radius, gap, 0, viastrip_angle, 1, "F.Cu")
+        top = TopTurn(
+            at,
+            inner_radius,
+            outer_radius,
+            gap,
+            termination_width,
+            viastrip_angle,
+            1,
+            "F.Cu",
+        )
         inners = [
-            Turn(
+            InnerTurn(
                 at,
                 inner_radius,
                 outer_radius,
                 gap,
-                n * rotation,
+                -n * rotation_per_turn - initial_rotation,
                 viastrip_angle,
                 1,
                 f"In{n}.Cu",
             )
             for n in range(1, number_turns - 1)
         ]
-        bottom = Turn(
+        bottom = BottomTurn(
             at,
             inner_radius,
             outer_radius,
             gap,
-            (number_turns - 1) * rotation,
+            termination_width,
             viastrip_angle,
             1,
             "B.Cu",
         )
         self.turns = [top] + inners + [bottom]
+
+    def estimate_dcr(self, stackup: [float], temperature: float = 25):
+        """Estimate the DC resistance of the winding
+
+        This function will estimate the DC resistance of the winding by calculating the estimated
+        dc resistance of each turn and adding the estimated inter-turn via resistance 
+        
+        Args:
+            stackup: list of copper weights for each layer in ounces
+            temperature: winding temperature in decrees C
+
+        Returns:
+            float: An estimation of the DC resistance in ohms
+        """
+
+        # TODO
+        raise NotImplementedError
 
     def __str__(self):
         return "\n".join(turn.__str__() for turn in self.turns)
@@ -101,19 +270,9 @@ class Winding:
 if __name__ == "__main__":
     at = Point(110, 110)
 
-    # # create 4 turns
-    # turn1 = Turn(at, 10, 15, 0.5, 0 * math.pi / 3, math.pi / 4, 1, "F.Cu")
-    # turn2 = Turn(at, 10, 15, 0.5, 1 * math.pi / 3, math.pi / 4, 1, "In1.Cu")
-    # turn3 = Turn(at, 10, 15, 0.5, 2 * math.pi / 3, math.pi / 4, 1, "In2.Cu")
-    # turn4 = Turn(at, 10, 15, 0.5, 3 * math.pi / 3, math.pi / 4, 1, "In3.Cu")
-    # turn5 = Turn(at, 10, 15, 0.5, 4 * math.pi / 3, math.pi / 4, 1, "In4.Cu")
-    # turn6 = Turn(at, 10, 15, 0.5, 5 * math.pi / 3, math.pi / 4, 1, "B.Cu")
-    # print(turn1)
-    # print(turn2)
-    # print(turn3)
-    # print(turn4)
-    # print(turn5)
-    # print(turn6)
-
     winding = Winding(at, 10, 15, 6, 0.5)
     print(winding)
+
+    # turn = TopTurn(at, 10, 15, 0.5, 5, math.pi / 8, 1, "F.Cu")
+    # turn = InnerTurn(at, 10, 15, 0.5, 0, math.pi / 8, 1, "F.Cu")
+    # print(turn)
