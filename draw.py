@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 import math
 import uuid
@@ -18,6 +19,12 @@ class Point:
     def __str__(self):
         return f"{self.x} {self.y}"
 
+    def __add__(self, other: Point):
+        return Point(self.x + other.x, self.y + other.y)
+
+    def __radd__(self, other: Point):
+        return self.__add__(other)
+
 
 @dataclass
 class Via:
@@ -25,12 +32,11 @@ class Via:
     size: float = 0.8
     drill: float = 0.4
     layers: (str) = ("F.Cu")
-    tsamp: uuid.UUID = uuid.uuid4()
+    tstamp: uuid.UUID = uuid.uuid4()
 
     def __str__(self):
-        tsamp = uuid.uuid4()
         layers = " ".join(self.layers)
-        return f"(via (at {self.at}) (size {self.size} (drill {self.drill}) (layer {layers} (free) (net 0) (tsamp {self.tsamp})"
+        return f"(via (at {self.at}) (size {self.size} (drill {self.drill}) (layer {layers} (free) (net 0) (tstamp {self.tstamp})"
 
 
 @dataclass
@@ -41,6 +47,17 @@ class Arc:
 
     def __str__(self):
         return f"(arc (start {self.start}) (mid {self.mid}) (end {self.end}))"
+
+    def __add__(self, other: Point):
+        return Arc(self.start + other, self.mid + other, self.end + other)
+
+
+def create_arc_from_polar(radius, start_angle, end_angle):
+    mid_angle = 0.5 * (start_angle + end_angle)
+    start = Point(radius * math.cos(start_angle), radius * math.sin(start_angle))
+    mid = Point(radius * math.cos(mid_angle), radius * math.sin(mid_angle))
+    end = Point(radius * math.cos(end_angle), radius * math.sin(end_angle))
+    return Arc(start, mid, end)
 
 
 # (gr_poly
@@ -79,54 +96,125 @@ class Arc:
 @dataclass
 class Polygon:
     points: [Point]
+    layer: str = "F.Cu"
+    tstamp: uuid.UUID = uuid.uuid4()
+
+    def __add__(self, other: Point):
+        return Polygon([point + other for point in self.points], self.layer)
 
     def __str__(self):
         points = "".join([f"{point}" for point in self.points])
         width = 0
-        layer = "F.Cu"
-        expression = f"(gr_poly(pts{points})(layer {layer}) (width {width}) (fill solid) (tstamp 5c1d6842-15a5-4f73-b198-8836681840a1))"
+        expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {width}) (fill solid) (tstamp {self.tstamp}))"
         return expression
 
 
-# (gr_poly
-#     (pts
-#       (arc (start 138.99987499921875 129.05) (mid 119 129) (end 138.99987499921875 128.95))
-#       (arc (start 143.99991666643518 128.95) (mid 114 129) (end 143.99991666643518 129.05))
-#     ) (layer "F.Cu") (width 0) (fill solid) (tstamp 5c1d6842-15a5-4f73-b198-8836681840a1))
-
-# (via (at 133.043447 111.6019) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (free) (net 0) (tstamp 4f9fdeff-02
 class Turn:
     """Defines a middle layer turn of a CFFC inductor
     """
 
-    def __init__(self, inner_radius, outer_radius, gap):
+    def __init__(
+        self,
+        at,
+        inner_radius: float,
+        outer_radius: float,
+        gap: float,
+        angle: float,
+        viastrip_angle: float,
+        viastrip_width: float,
+        layer: str,
+    ):
         assert (
             outer_radius > inner_radius
         ), "outer radius must be greater than inner radius"
 
-        center = 129
-
-        x = center + inner_radius * math.sqrt(1 - (gap / 2 / inner_radius) ** 2)
-        start = Point(x, center + gap / 2)
-        mid = Point(center - inner_radius, center)
-        end = Point(x, center - gap / 2)
-        inner_arc = Arc(start, mid, end)
-
-        x = center + outer_radius * math.sqrt(1 - (gap / 2 / outer_radius) ** 2)
-        end = Point(x, center + gap / 2)
-        mid = Point(center - outer_radius, center)
-        start = Point(x, center - gap / 2)
-        outer_arc = Arc(start, mid, end)
+        # create the vias arcs
+        a = math.asin(gap / 2 / inner_radius)
+        b = viastrip_angle / 2
+        c = math.asin(gap / 2 / outer_radius)
+        start_via_arc = create_arc_from_polar(inner_radius, a + angle, b + angle)
+        inner_arc = create_arc_from_polar(
+            inner_radius + viastrip_width, b + angle, 2 * math.pi - b + angle
+        )
+        end_via_arc = create_arc_from_polar(
+            inner_radius, 2 * math.pi - b + angle, 2 * math.pi - a + angle
+        )
+        outer_arc = create_arc_from_polar(
+            outer_radius, 2 * math.pi - c + angle, c + angle
+        )
 
         # create the polygon
-        points = [inner_arc, outer_arc]
-        self.polygon = Polygon(points)
+        points = [start_via_arc, inner_arc, end_via_arc, outer_arc]
+        self.polygon = Polygon(points, layer) + at
 
     def __str__(self):
         return self.polygon.__str__()
 
 
-if __name__ == "__main__":
+class Cffc:
+    def __init__(
+        self,
+        at: Point,
+        inner_radius: float,
+        outer_radius: float,
+        number_turns: int,
+        gap: float = 0.5,
+    ):
 
-    turn = Turn(10, 15, 0.5)
-    print(turn)
+        # calculate the angle we can allocate to the via transitions
+        inner_circumfrance = 2 * math.pi * inner_radius
+
+        viastrip_angle = (
+            2 * math.pi * (inner_circumfrance - number_turns * gap) / inner_circumfrance
+        ) / number_turns
+
+        # create the top and bottom turns
+        top = Turn(at, inner_radius, outer_radius, gap, 0, viastrip_angle, 1, "F.Cu")
+        inners = [
+            Turn(
+                at,
+                inner_radius,
+                outer_radius,
+                gap,
+                n * 2 * math.pi / number_turns,
+                viastrip_angle,
+                1,
+                f"In{n}.Cu",
+            )
+            for n in range(1, number_turns - 1)
+        ]
+        bottom = Turn(
+            at,
+            inner_radius,
+            outer_radius,
+            gap,
+            (number_turns - 1) * 2 * math.pi / number_turns,
+            viastrip_angle,
+            1,
+            "B.Cu",
+        )
+        self.turns = [top] + inners + [bottom]
+
+    def __str__(self):
+        return "\n".join(turn.__str__() for turn in self.turns)
+
+
+if __name__ == "__main__":
+    at = Point(110, 110)
+
+    # # create 4 turns
+    # turn1 = Turn(at, 10, 15, 0.5, 0 * math.pi / 3, math.pi / 4, 1, "F.Cu")
+    # turn2 = Turn(at, 10, 15, 0.5, 1 * math.pi / 3, math.pi / 4, 1, "In1.Cu")
+    # turn3 = Turn(at, 10, 15, 0.5, 2 * math.pi / 3, math.pi / 4, 1, "In2.Cu")
+    # turn4 = Turn(at, 10, 15, 0.5, 3 * math.pi / 3, math.pi / 4, 1, "In3.Cu")
+    # turn5 = Turn(at, 10, 15, 0.5, 4 * math.pi / 3, math.pi / 4, 1, "In4.Cu")
+    # turn6 = Turn(at, 10, 15, 0.5, 5 * math.pi / 3, math.pi / 4, 1, "B.Cu")
+    # print(turn1)
+    # print(turn2)
+    # print(turn3)
+    # print(turn4)
+    # print(turn5)
+    # print(turn6)
+
+    inductor = Cffc(at, 10, 15, 6, 0.5)
+    print(inductor)
