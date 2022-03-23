@@ -29,7 +29,7 @@ class Via:
 
     def __str__(self):
         layers = " ".join(self.layers)
-        return f"(via (at {self.at}) (size {self.size} (drill {self.drill}) (layer {layers} (free) (net 0) (tstamp {self.tstamp})"
+        return f"(via (at {self.at}) (size {self.size}) (drill {self.drill}) (layers {layers}) (free) (net 0) (tstamp {self.tstamp}))"
 
 
 @dataclass
