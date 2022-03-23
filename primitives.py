@@ -57,10 +57,14 @@ def arc_from_polar(radius, start_angle, end_angle):
 class Polygon:
     points: [Point]
     layer: str = "F.Cu"
+    width: float = 0
+    fill: str = "solid"
     tstamp: uuid.UUID = uuid.uuid4()
 
     def __add__(self, other: Point):
-        return Polygon([point + other for point in self.points], self.layer)
+        return Polygon(
+            [point + other for point in self.points], self.layer, self.width, self.fill
+        )
 
     def __str__(self):
         points = "".join(
@@ -69,6 +73,5 @@ class Polygon:
                 for point in self.points
             ]
         )
-        width = 0
-        expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {width}) (fill solid) (tstamp {self.tstamp}))"
+        expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
