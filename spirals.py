@@ -1,0 +1,61 @@
+import math
+
+from primitives import Arc, Polygon, Point, arc_from_polar
+
+
+class Spiral:
+    """Create an optimized spiral multi-turn winding on a single layer
+    """
+
+    def __init__(
+        self,
+        at: Point,
+        inner_radius: float,
+        outer_radius: float,
+        num_turns: int,
+        gap: float,
+        layer: str = "F.Cu",
+    ):
+
+        # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
+        # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
+        # Industrial DC/DC Converter Module
+        # https://www.pes-publications.ee.ethz.ch/uploads/tx_ethpublications/7_electronics-10-02158_FINAL_Knabben.pdf
+        inverse_num_turns = 1 / num_turns
+        radii = [
+            (inner_radius ** (num_turns - i) * outer_radius ** i) ** inverse_num_turns
+            for i in range(num_turns)
+        ]
+
+        # create the arcs for the inner turns
+        angle = math.acos(1 - gap / radii[0])
+        arcs = [arc_from_polar(radii[0], -math.pi + angle, math.pi)]
+        for r0, r1 in zip(radii[0:-1], radii[1:]):
+            angle = math.acos(gap / r1 + r0 * (1 - gap / r0) / r1)
+            arc = arc_from_polar(r1, -math.pi + angle, math.pi)
+            arcs.append(arc)
+
+        # create the outermost arc
+        a0 = math.acos(
+            gap / outer_radius + radii[-1] * (1 - gap / radii[-1]) / outer_radius
+        )
+        a1 = math.acos(radii[-1] * (1 - gap / radii[-1]) / outer_radius)
+        arc = arc_from_polar(outer_radius, math.pi + a0, -math.pi + a1)
+        arcs.append(arc)
+
+        # create the outer arcs of the other turns
+        for r0, r1 in zip(radii[-2::-1], radii[-1:0:-1]):
+            angle = math.acos((r0 - gap) / (r1 - gap))
+            arc = arc_from_polar(r1 - gap, math.pi, -math.pi + angle)
+            arcs.append(arc)
+
+        self.polygon = Polygon(arcs, layer) + at
+
+    def __str__(self):
+        return self.polygon.__str__()
+
+
+if __name__ == "__main__":
+    at = Point(110, 110)
+    spiral = Spiral(at, 10, 15, 4, 0.5)
+    print(spiral)

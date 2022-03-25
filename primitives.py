@@ -25,11 +25,13 @@ class Via:
     size: float = 0.8
     drill: float = 0.4
     layers: (str) = ("F.Cu")
+    remove_unused_layers = True
     tstamp: uuid.UUID = uuid.uuid4()
 
     def __str__(self):
         layers = " ".join(self.layers)
-        return f"(via (at {self.at}) (size {self.size}) (drill {self.drill}) (layers {layers}) (free) (net 0) (tstamp {self.tstamp}))"
+        annular_option = "(remove_unused_layers)" if self.remove_unused_layers else ""
+        return f"(via (at {self.at}) (size {self.size}) (drill {self.drill}) (layers {layers}) {annular_option} (free) (net 0) (tstamp {self.tstamp}))"
 
 
 @dataclass
