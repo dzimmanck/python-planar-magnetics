@@ -6,8 +6,6 @@ The workflow for developing planar magnetics can be very inefficient and frustra
 
 # Example Usage
 
-Create a spiral winding
-
 ```python
 from planars import Spiral
 
@@ -20,6 +18,9 @@ spiral = Spiral(inner_radius=10e-3,
 # print a KiCAD S-expression
 print(spiral)
 ```
+Which generates a KiCAD s-expression for the following geometry.
+
+![alt text](images/4turn_spiral.jpg?raw=true)
 
 Create a [Compensating Fringing Field Concept](https://www.psma.com/sites/default/files/uploads/files/Introduction%20of%20the%20CFFC-Compensating%20Fringing%20Field%20Concept%20Schaefer%2C%20ETH%20Zurich.pdf) inductor.
 
