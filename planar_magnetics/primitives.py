@@ -10,7 +10,7 @@ class Point:
     y: float
 
     def __str__(self):
-        return f"{self.x} {self.y}"
+        return f"{self.x*1e3} {self.y*1e3}"
 
     def __add__(self, other: Point):
         return Point(self.x + other.x, self.y + other.y)

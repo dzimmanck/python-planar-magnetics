@@ -1,6 +1,6 @@
 import math
 
-from primitives import Arc, Polygon, Point, arc_from_polar
+from planar_magnetics.primitives import Arc, Polygon, Point, arc_from_polar
 
 
 class Spiral:
@@ -51,7 +51,7 @@ class Spiral:
 
         self.polygon = Polygon(arcs, layer) + at
 
-    def estimate_dcr(self, stackup: [float], temperature: float = 25):
+    def estimate_dcr(self, thickness: float, temperature: float = 25):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
@@ -74,19 +74,19 @@ class Spiral:
 
 if __name__ == "__main__":
 
+    from planar_magnetics.utils import calculate_creepage, PollutionDegree
+
     # create a spiral inductor
     spiral = Spiral(
-        at=Point(110, 110),
-        inner_radius=10,
-        outer_radius=15,
-        num_turns=1,
-        gap=0.3,
+        at=Point(110e-3, 110e-3),
+        inner_radius=10e-3,
+        outer_radius=15e-3,
+        num_turns=4,
+        gap=calculate_creepage(
+            500 / 4, PollutionDegree.Two
+        ),  # creepage per turn for spiral that needs to withstand 500V
         layer="F.Cu",
     )
-
-    # # calculate the DC resistance
-    # dcr = spiral.estimate_dcr(weight=2, temperature=25)
-    # print("Estimated resistance is {dcr} ohms")
 
     # get the KiCad S expression to PCB footprint
     print(spiral)
