@@ -51,11 +51,42 @@ class Spiral:
 
         self.polygon = Polygon(arcs, layer) + at
 
+    def estimate_dcr(self, stackup: [float], temperature: float = 25):
+        """Estimate the DC resistance of the winding
+
+        This function will estimate the DC resistance of the winding by calculating the estimated
+        dc resistance of each turn and adding the estimated inter-turn via resistance 
+        
+        Args:
+            thickness: thickness of the layer
+            temperature: winding temperature in decrees C
+
+        Returns:
+            float:s An estimation of the DC resistance in ohms
+        """
+
+        # TODO
+        raise NotImplementedError
+
     def __str__(self):
         return self.polygon.__str__()
 
 
 if __name__ == "__main__":
-    at = Point(110, 110)
-    spiral = Spiral(at, 10, 15, 4, 0.5)
+
+    # create a spiral inductor
+    spiral = Spiral(
+        at=Point(110, 110),
+        inner_radius=10,
+        outer_radius=15,
+        num_turns=1,
+        gap=0.3,
+        layer="F.Cu",
+    )
+
+    # # calculate the DC resistance
+    # dcr = spiral.estimate_dcr(weight=2, temperature=25)
+    # print("Estimated resistance is {dcr} ohms")
+
+    # get the KiCad S expression to PCB footprint
     print(spiral)
