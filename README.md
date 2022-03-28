@@ -26,7 +26,7 @@ print(spiral)
 ```
 Which generates a KiCAD s-expression for the following geometry.
 
-![alt text](images/4turn_spiral.png?raw=true)
+<img src="images/4turn_spiral.png" alt="4 turn spiral" style="width:400px;"/>
 
 Create a [Compensating Fringing Field Concept](https://www.psma.com/sites/default/files/uploads/files/Introduction%20of%20the%20CFFC-Compensating%20Fringing%20Field%20Concept%20Schaefer%2C%20ETH%20Zurich.pdf) inductor.
 
