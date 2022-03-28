@@ -7,15 +7,21 @@ The workflow for developing planar magnetics can be very inefficient and frustra
 # Example Usage
 
 ```python
-from planars import Spiral
+from planar_magnetics.utils import calculate_creepage, PollutionDegree
 
-# create a spiral winding
-spiral = Spiral(inner_radius=10e-3,
-                outer_radius=15e-3,
-                gap = 0.1e-3,
-                num_turns = 4)
+# create a spiral inductor
+spiral = Spiral(
+    at=Point(110e-3, 110e-3),
+    inner_radius=10e-3,
+    outer_radius=15e-3,
+    num_turns=4,
+    gap=calculate_creepage(
+        500 / 4, PollutionDegree.Two
+    ),  # creepage per turn for spiral that needs to withstand 500V
+    layer="F.Cu",
+)
 
-# print a KiCAD S-expression
+# get the KiCad S expression to PCB footprint
 print(spiral)
 ```
 Which generates a KiCAD s-expression for the following geometry.
