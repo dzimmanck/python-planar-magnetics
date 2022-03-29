@@ -1,6 +1,6 @@
 import math
 import uuid
-from planar_magnetics.primitives import Point, Polygon, Via, arc_from_polar
+from planar_magnetics.geometry import Point, Polygon, Via, arc_from_polar
 
 
 class TopTurn:

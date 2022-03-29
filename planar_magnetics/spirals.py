@@ -1,6 +1,6 @@
 import math
 
-from planar_magnetics.primitives import Arc, Polygon, Point, arc_from_polar
+from planar_magnetics.geometry import Arc, Polygon, Point, arc_from_polar
 
 
 class Spiral:
