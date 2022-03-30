@@ -4,6 +4,31 @@ import math
 import uuid
 
 
+def find_center(a: Point, b: Point, c: Point):
+    """Find the center of a circle through three points
+
+    Args:
+        a (Point): A first point
+        b (Point): A second point
+        c (Point): A third point
+
+        Returns:
+            Point: The center of the circle that intersects the three points
+    """
+    temp = b.x ** 2 + b.y ** 2
+    ab = (a.x ** 2 + a.y ** 2 - temp) / 2
+    bc = (temp - c.x ** 2 - c.y ** 2) / 2
+    det = (a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y)
+
+    assert abs(det) > 1e-10, "Determinant must be non-zero to find circle center"
+
+    # Center of circle
+    x = (ab * (b.y - c.y) - bc * (a.y - b.y)) / det
+    y = ((a.x - b.x) * bc - (b.x - c.x) * ab) / det
+
+    return Point(x, y)
+
+
 @dataclass
 class Point:
     x: float
@@ -77,3 +102,11 @@ class Polygon:
         )
         expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
+
+
+if __name__ == "__main__":
+    arc = arc_from_polar(3.0, math.pi / 3.2, 1.2 * math.pi) + Point(1.2, 3.6)
+
+    print(arc.start, arc.mid, arc.end)
+    center = find_center(arc.start, arc.mid, arc.end)
+    print(center.x, center.y)
