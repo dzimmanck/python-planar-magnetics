@@ -1,13 +1,6 @@
 import math
 
-from planar_magnetics.geometry import (
-    Arc,
-    Polygon,
-    Point,
-    arc_from_polar,
-    round_corner,
-    find_smoothing_arc,
-)
+from planar_magnetics.geometry import Arc, Polygon, Point
 
 
 class Spiral:
@@ -37,10 +30,10 @@ class Spiral:
 
         # create the arcs for the inner turns
         angle = math.acos(1 - gap / radii[0])
-        arcs = [arc_from_polar(radii[0], -math.pi + angle, math.pi)]
+        arcs = [Arc(at, radii[0], -math.pi + angle, math.pi)]
         for r0, r1 in zip(radii[0:-1], radii[1:]):
             angle = math.acos(gap / r1 + r0 * (1 - gap / r0) / r1)
-            arc = arc_from_polar(r1, -math.pi + angle, math.pi)
+            arc = Arc(at, r1, -math.pi + angle, math.pi)
             arcs.append(arc)
 
         # create the outermost arc
@@ -48,35 +41,35 @@ class Spiral:
             gap / outer_radius + radii[-1] * (1 - gap / radii[-1]) / outer_radius
         )
         a1 = math.acos(radii[-1] * (1 - gap / radii[-1]) / outer_radius)
-        arc = arc_from_polar(outer_radius, math.pi + a0, -math.pi + a1)
+        arc = Arc(at, outer_radius, math.pi + a0, -math.pi + a1)
         arcs.append(arc)
 
         # create the outer arcs of the other turns
         for r0, r1 in zip(radii[-2::-1], radii[-1:0:-1]):
             angle = math.acos((r0 - gap) / (r1 - gap))
-            arc = arc_from_polar(r1 - gap, math.pi, -math.pi + angle)
+            arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
 
-        # round the first corner
-        N = len(arcs)
-        arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
-        arcs = (
-            arcs[: -N + 1]
-            + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
-            + arcs[-N + 3 :]
-        )
-        arcs = (
-            arcs[: -N + 2]
-            + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
-            + arcs[-N + 4 :]
-        )
-        arcs = (
-            arcs[: -N + 3]
-            + round_corner(arcs[-N + 3], arcs[-N + 4], radius)
-            + arcs[-N + 5 :]
-        )
+        # # round the first corner
+        # N = len(arcs)
+        # arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
+        # arcs = (
+        #     arcs[: -N + 1]
+        #     + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
+        #     + arcs[-N + 3 :]
+        # )
+        # arcs = (
+        #     arcs[: -N + 2]
+        #     + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
+        #     + arcs[-N + 4 :]
+        # )
+        # arcs = (
+        #     arcs[: -N + 3]
+        #     + round_corner(arcs[-N + 3], arcs[-N + 4], radius)
+        #     + arcs[-N + 5 :]
+        # )
 
-        self.polygon = Polygon(arcs, layer) + at
+        self.polygon = Polygon(arcs, layer)
 
     def estimate_dcr(self, thickness: float, temperature: float = 25):
         """Estimate the DC resistance of the winding
@@ -108,7 +101,7 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=10e-3,
         outer_radius=15e-3,
-        num_turns=4,
+        num_turns=2,
         gap=calculate_creepage(
             500 / 4, PollutionDegree.Two
         ),  # creepage per turn for spiral that needs to withstand 500V
