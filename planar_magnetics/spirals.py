@@ -1,6 +1,13 @@
 import math
 
-from planar_magnetics.geometry import Arc, Polygon, Point, arc_from_polar
+from planar_magnetics.geometry import (
+    Arc,
+    Polygon,
+    Point,
+    arc_from_polar,
+    round_corner,
+    find_smoothing_arc,
+)
 
 
 class Spiral:
@@ -15,6 +22,7 @@ class Spiral:
         num_turns: int,
         gap: float,
         layer: str = "F.Cu",
+        radius: float = 0.1e-3,
     ):
 
         # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
@@ -48,6 +56,25 @@ class Spiral:
             angle = math.acos((r0 - gap) / (r1 - gap))
             arc = arc_from_polar(r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
+
+        # round the first corner
+        N = len(arcs)
+        arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
+        arcs = (
+            arcs[: -N + 1]
+            + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
+            + arcs[-N + 3 :]
+        )
+        arcs = (
+            arcs[: -N + 2]
+            + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
+            + arcs[-N + 4 :]
+        )
+        arcs = (
+            arcs[: -N + 3]
+            + round_corner(arcs[-N + 3], arcs[-N + 4], radius)
+            + arcs[-N + 5 :]
+        )
 
         self.polygon = Polygon(arcs, layer) + at
 
@@ -86,6 +113,7 @@ if __name__ == "__main__":
             500 / 4, PollutionDegree.Two
         ),  # creepage per turn for spiral that needs to withstand 500V
         layer="F.Cu",
+        radius=0.5e-3,
     )
 
     # get the KiCad S expression to PCB footprint
