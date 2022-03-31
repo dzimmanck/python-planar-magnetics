@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import math
 import uuid
+import ezdxf
 
 
 @dataclass
@@ -66,6 +67,22 @@ class Arc:
     def __add__(self, other: Point):
         return Arc(self.start + other, self.mid + other, self.end + other)
 
+    def rotates_clockwise(self):
+        return self.end_angle < self.start_angle
+
+    def rotates_counterclockwise(self):
+        return self.end_angle > self.start_angle
+
+    def add_to_dxf_model(self, modelspace):
+        """Add Arc to DXF model"""
+
+        modelspace.add_arc(
+            center=(self.center.x, self.center.y),
+            radius=self.radius,
+            start_angle=self.start_angle,
+            end_angle=self.end_angle,
+        )
+
 
 @dataclass
 class Polygon:
@@ -89,3 +106,8 @@ class Polygon:
         )
         expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
+
+
+if __name__ == "__main__":
+
+    arc = Arc(Point(0, 0), 10, 0, math.pi / 2)

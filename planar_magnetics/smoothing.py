@@ -3,34 +3,14 @@ from dataclasses import dataclass
 import math
 import uuid
 
+from planar_magnetics.geometry import Point, Arc
 
-def find_center(a: Point, b: Point, c: Point):
-    """Find the center of a circle through three points
-
-    Args:
-        a (Point): A first point
-        b (Point): A second point
-        c (Point): A third point
-
-        Returns:
-            Point: The center of the circle that intersects the three points
-    """
-    temp = b.x ** 2 + b.y ** 2
-    ab = (a.x ** 2 + a.y ** 2 - temp) / 2
-    bc = (temp - c.x ** 2 - c.y ** 2) / 2
-    det = (a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y)
-
-    assert abs(det) > 1e-10, "Determinant must be non-zero to find circle center"
-
-    # Center of circle
-    x = (ab * (b.y - c.y) - bc * (a.y - b.y)) / det
-    y = ((a.x - b.x) * bc - (b.x - c.x) * ab) / det
-
-    return Point(x, y)
+TWO_PI = 2 * math.pi
+PI_OVER_2 = math.pi / 2
 
 
-def find_smoothing_arc(point: Point, arc: Arc, radius: float):
-    """Find smoothing arc between point and arc
+def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
+    """Find smoothing arc that joins section of polygon formed from a point and an arc
 
     Assuming you have a section of polygon formed from a line segment to an arc, this finds the arc
     that can be inserted between the line segment and the arc which is tangential to each
@@ -43,40 +23,112 @@ def find_smoothing_arc(point: Point, arc: Arc, radius: float):
         (Arc): The smoothing corner arc
     """
 
-    # find the radius and center of the arc
-    c = find_center(arc.start, arc.mid, arc.end)
-    r = abs(arc.start - c)
+    r = arc.radius
 
-    p1 = point - c
-    p2 = arc.start - c
-    delta = p1 - p2
+    p1 = point - arc.center
+    p2 = arc.start - arc.center
 
+    if arc.rotates_clockwise():
+        delta = p2 - p1
+    else:
+        delta = p1 - p2
+
+    # calculate the amplitude of the line segment
     R = abs(delta)
+
+    # # -------------------------------------------------------
+    # # equation for the distance between a point and a line
+    # radius * R = abs(delta.x * (p1.y - y) - delta.y * (p1.x - x))
+
+    # radius * R = delta.x * (p1.y - y) - delta.y * (p1.x - x)
+    # radius * R = delta.y * (p1.x - x) - delta.x * (p1.y - y)
+
+    # # sub in trig expressions for x and y
+    # x = center_to_center * math.cos(angle)
+    # y = center_to_center * math.sin(angle)
+
+    # (radius * R + delta.y *p1.x - delta.x * p1.y) / center_to_center = delta.y * math.cos(angle) - delta.x * math.sin(angle)
+    # (radius * R - delta.y *p1.x + delta.x * p1.y) / center_to_center = delta.x * math.sin(angle) - delta.y * math.cos(angle)
+
+    # alpha = math.atan2(delta.y, -delta.x)
+    # (radius * R + delta.y *p1.x - delta.x * p1.y) / center_to_center = R * math.sin(angle + alpha)
+
+    # alpha = math.atan2(-delta.y, delta.x)
+    # (radius * R - delta.y *p1.x + delta.x * p1.y) / center_to_center = R * math.sin(angle + alpha)
+
+    # # -------------------------------------------------------
+
+    # calculate the distance from the center of the arc to the center of the corner
+    # if the segment intersects from the inside of the circle, it will be arc.radius - radius
+    # if the segment intersects from the outside of the circle, it will be arc.radius + radius
+    if abs(point - arc.center) < arc.radius:
+        center_to_center = r - radius
+    else:
+        center_to_center = r + radius
+
+    # calculate the angle of the vector from center to center
     alpha = math.atan2(delta.y, -delta.x)
     angle = (
-        math.asin(
-            (radius * abs(delta) - delta.x * p1.y + delta.y * p1.x) / (r - radius) / R
-        )
+        math.asin((radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R)
         - alpha
     )
 
-    # derive center
-    x = (r - radius) * math.cos(angle)
-    y = (r - radius) * math.sin(angle)
-    center = Point(x, y) + c
+    # # the arcsin function generates an angle that is between -pi and pi
+    # # pi - angle is also a valid solution we need to check
+    if arc.rotates_clockwise():
+        angle = (
+            math.pi
+            - math.asin(
+                (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
+            )
+            - alpha
+        )
+    else:
 
-    end_angle = angle + 2 * math.pi
-    start_angle = math.pi / 2 + math.atan2(delta.y, delta.x)
+        # calculate the angle of the vector from center to center
+        alpha = math.atan2(delta.y, -delta.x)
+        angle = (
+            math.asin(
+                (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
+            )
+            - alpha
+        )
 
-    return arc_from_polar(radius, start_angle, end_angle) + center
+    # derive center of the corner
+    x = center_to_center * math.cos(angle)
+    y = center_to_center * math.sin(angle)
+    center = Point(x, y) + arc.center
+
+    # derive the start and end angles
+    start_angle = PI_OVER_2 + math.atan2(delta.y, delta.x)
+    end_angle = angle
+
+    # make sure the corner arc rotates in the same direction as the main arc
+    if arc.rotates_clockwise():
+        while start_angle < end_angle:
+            start_angle += TWO_PI
+    else:
+        while start_angle > end_angle:
+            start_angle -= TWO_PI
+
+    print("s", start_angle)
+    print("e", end_angle)
+
+    return Arc(center, radius, start_angle, end_angle)
 
 
 def round_corner(arc1: Arc, arc2: Arc, radius: float):
-    corner = find_smoothing_arc(arc1.end, arc2, radius)
+
+    # find the arc that rounds the corner
+    corner = smooth_point_to_arc(arc1.end, arc2, radius)
+
+    print("a", arc2.start_angle)
+    print("c", corner.end_angle)
+
     arcs = [
         arc1,
         corner,
-        Arc(corner.end, arc2.mid, arc2.end),
+        Arc(arc2.center, arc2.radius, corner.end_angle, arc2.end_angle),
     ]
     return arcs
 

@@ -1,6 +1,7 @@
 import math
 
 from planar_magnetics.geometry import Arc, Polygon, Point
+from planar_magnetics.smoothing import round_corner
 
 
 class Spiral:
@@ -50,14 +51,19 @@ class Spiral:
             arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
 
-        # # round the first corner
-        # N = len(arcs)
-        # arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
-        # arcs = (
-        #     arcs[: -N + 1]
-        #     + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
-        #     + arcs[-N + 3 :]
-        # )
+        # round the first corner
+        N = len(arcs)
+
+        arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
+
+        arcs = (
+            arcs[: -N + 1]
+            + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
+            + arcs[-N + 3 :]
+        )
+
+        # print(round_corner(arcs[-N + 2], arcs[-N + 3], radius)[1])
+
         # arcs = (
         #     arcs[: -N + 2]
         #     + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
