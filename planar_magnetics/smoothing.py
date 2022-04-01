@@ -5,8 +5,10 @@ import uuid
 
 from planar_magnetics.geometry import Point, Arc
 
+# useful geometric constants
 TWO_PI = 2 * math.pi
-PI_OVER_2 = math.pi / 2
+PI_OVER_TWO = math.pi / 2
+THREE_PI_OVER_TWO = 3 * math.pi / 2
 
 
 def get_distance(p0: Point, p1: Point, p2: Point):
@@ -21,32 +23,21 @@ def get_distance(p0: Point, p1: Point, p2: Point):
     return abs(p21.x * p10.y - p21.y * p10.x) / abs(p21)
 
 
-def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
-    """Find smoothing arc that joins section of polygon formed from a point and an arc
+def get_quadrant(angle: float):
+    """Calculate the quadrant of an angle"""
 
-    Assuming you have a section of polygon formed from a line segment to an arc, this finds the arc
-    that can be inserted between the line segment and the arc which is tangential to each
+    angle %= TWO_PI
 
-    Args:
-        p (Point): The point
-        arc (Arc): The Arc
+    if angle < 0:
+        angle += TWO_PI
 
-    Returns:
-        (Arc): The smoothing corner arc
-    """
-
-    r = arc.radius
-
-    p1 = point - arc.center
-    p2 = arc.start - arc.center
-
-    if arc.rotates_clockwise():
-        delta = p2 - p1
-    else:
-        delta = p1 - p2
-
-    # calculate the amplitude of the line segment
-    R = abs(delta)
+    if angle < PI_OVER_TWO:
+        return 1
+    if angle < math.pi:
+        return 2
+    if angle < THREE_PI_OVER_TWO:
+        return 3
+    return 4
 
     # # -------------------------------------------------------
     # # equation for the distance between a point and a line
@@ -70,41 +61,74 @@ def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
 
     # # -------------------------------------------------------
 
+
+def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
+    """Find smoothing arc that joins section of polygon formed from a point and an arc
+
+    Assuming you have a section of polygon formed from a line segment to an arc, this finds the arc
+    that can be inserted between the line segment and the arc which is tangential to each
+
+    Args:
+        p (Point): The point
+        arc (Arc): The Arc
+
+    Returns:
+        (Arc): The smoothing corner arc
+    """
+
+    # normalized to the arc center, which simplifies the math.  We will add the arc center back to
+    # the result at the end
+    p1 = point - arc.center
+    p2 = arc.start - arc.center
+
+    # find the starting quadrant of the start of the arc
+    starting_quadrant = get_quadrant(arc.start_angle)
+    delta = p1 - p2
+
+    # calculate the amplitude of the line segment
+    R = abs(delta)
+
     # calculate the distance from the center of the arc to the center of the corner
     # if the segment intersects from the inside of the circle, it will be arc.radius - radius
     # if the segment intersects from the outside of the circle, it will be arc.radius + radius
     if abs(point - arc.center) < arc.radius:
-        center_to_center = r - radius
+        center_to_center = arc.radius - radius
+        corner_inside_arc = True
     else:
-        center_to_center = r + radius
+        center_to_center = arc.radius + radius
+        corner_inside_arc = False
 
     # calculate the angle of the vector from center to center
     alpha = math.atan2(delta.y, -delta.x)
+
+    # angle = (
+    #     math.asin((radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R)
+    #     - alpha
+    # )
+
     angle = (
-        math.asin((radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R)
+        math.pi
+        - math.asin(
+            (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
+        )
         - alpha
     )
 
-    # # the arcsin function generates an angle that is between -pi and pi
-    # # pi - angle is also a valid solution we need to check
-    if arc.rotates_clockwise():
-        angle = (
-            math.pi
-            - math.asin(
-                (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
-            )
-            - alpha
-        )
-    else:
-
-        # calculate the angle of the vector from center to center
-        alpha = math.atan2(delta.y, -delta.x)
-        angle = (
-            math.asin(
-                (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
-            )
-            - alpha
-        )
+    # if starting_quadrant > 2:
+    #     angle = (
+    #         math.asin(
+    #             (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
+    #         )
+    #         - alpha
+    #     )
+    # else:
+    #     angle = (
+    #         math.pi
+    #         - math.asin(
+    #             (radius * R - delta.x * p1.y + delta.y * p1.x) / center_to_center / R
+    #         )
+    #         - alpha
+    #     )
 
     # derive center of the corner
     x = center_to_center * math.cos(angle)
@@ -112,19 +136,22 @@ def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
     center = Point(x, y) + arc.center
 
     # derive the start and end angles
-    start_angle = PI_OVER_2 + math.atan2(delta.y, delta.x)
-    end_angle = angle
+    start_angle = PI_OVER_TWO + math.atan2(delta.y, delta.x)
 
-    # make sure the corner arc rotates in the same direction as the main arc
-    if arc.rotates_clockwise():
-        while start_angle < end_angle:
-            start_angle += TWO_PI
+    if corner_inside_arc:
+        end_angle = angle
+        print("inside")
     else:
-        while start_angle > end_angle:
-            start_angle -= TWO_PI
+        print("outside")
+        end_angle = angle + math.pi
 
-    print("s", start_angle)
-    print("e", end_angle)
+    # # make sure the corner arc rotates in the same direction as the main arc
+    # if arc.rotates_clockwise():
+    #     while start_angle < end_angle:
+    #         start_angle += TWO_PI
+    # else:
+    #     while start_angle > end_angle:
+    #         start_angle -= TWO_PI
 
     return Arc(center, radius, start_angle, end_angle)
 
@@ -176,13 +203,13 @@ def pairwise(iterable):
 
 
 if __name__ == "__main__":
-    point = Point(-10e-3, 0)
-    start = Point(-10e-3, -4.740726435806956e-3)
-    mid = Point(10.79682080774686e-3, 2.429639393935523e-3)
-    end = Point(-11.066819197003216e-3, 0)
-    arc = Arc(start, mid, end)
+    arc0 = Arc(
+        Point(110.0e-3, 110.0e-3),
+        0.011997448713915889,
+        3.141592653589793,
+        -2.519520609753873,
+    )
+    arc1 = Arc(Point(110.0e-3, 110.0e-3), 0.01, -2.9175173682879736, 3.141592653589793)
 
-    # point = Point(0, -1e-3)
-    corner = find_smoothing_arc(point, arc, 0.5e-3)
-
+    corner = smooth_point_to_arc(arc0.end, arc1, radius=0.5e-3)
     print(corner)

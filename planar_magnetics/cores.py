@@ -1,3 +1,8 @@
+import math
+import uuid
+from planar_magnetics.geometry import Arc, Point, Polygon
+
+
 class Core:
     def __init__(
         self,
@@ -5,8 +10,8 @@ class Core:
         inner_radius: float,
         outer_radius: float,
         termination_width: float = None,
-        edge_to_trace: float = 0.635,
-        edge_to_core: float = 0.5,
+        edge_to_trace: float = 0.635e-3,
+        edge_to_core: float = 0.5e-3,
     ):
 
         if termination_width is None:
@@ -27,41 +32,41 @@ class Core:
         self.centerpost_area = math.pi * self.centerpost_radius ** 2
 
         # create polygons for the outer post cutouts
-        extension = 3
+        extension = 2e-3  # FIXME:  This should not be a constant
         outer_cutout_radius = self.outerpost_radius - edge_to_core
         start_angle = math.asin(
             (termination_width / 2 + edge_to_trace) / outer_cutout_radius
         )
         end_angle = math.pi / 2 - start_angle
-        arc = arc_from_polar(outer_cutout_radius, start_angle, end_angle)
+        arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
         corner1 = arc.end + Point(0, extension)
         corner3 = arc.start + Point(extension, 0)
         corner2 = Point(corner3.x, corner1.y)
-        leg1 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none") + at
+        leg1 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
-        arc = arc_from_polar(outer_cutout_radius, start_angle, end_angle)
+        arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
         corner1 = arc.end + Point(-extension, 0)
         corner3 = arc.start + Point(0, extension)
         corner2 = Point(corner1.x, corner3.y)
-        leg2 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none") + at
+        leg2 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
-        arc = arc_from_polar(outer_cutout_radius, start_angle, end_angle)
+        arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
         corner1 = arc.end + Point(0, -extension)
         corner3 = arc.start + Point(-extension, 0)
         corner2 = Point(corner3.x, corner1.y)
-        leg3 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none") + at
+        leg3 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
-        arc = arc_from_polar(outer_cutout_radius, start_angle, end_angle)
+        arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
         corner1 = arc.end + Point(extension, 0)
         corner3 = arc.start + Point(0, -extension)
         corner2 = Point(corner1.x, corner2.y)
-        leg4 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none") + at
+        leg4 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         self.outerposts = [leg1, leg2, leg3, leg4]
 

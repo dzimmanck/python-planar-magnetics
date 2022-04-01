@@ -35,7 +35,7 @@ class Via:
     def __str__(self):
         layers = " ".join(self.layers)
         annular_option = "(remove_unused_layers)" if self.remove_unused_layers else ""
-        return f"(via (at {self.at}) (size {self.size}) (drill {self.drill}) (layers {layers}) {annular_option} (free) (net 0) (tstamp {self.tstamp}))"
+        return f"(via (at {self.at}) (size {self.size*1e3}) (drill {self.drill*1e3}) (layers {layers}) {annular_option} (free) (net 0) (tstamp {self.tstamp}))"
 
 
 def point_from_polar(radius, angle):
@@ -65,7 +65,7 @@ class Arc:
         return f"(arc (start {self.start}) (mid {self.mid}) (end {self.end}))"
 
     def __add__(self, other: Point):
-        return Arc(self.start + other, self.mid + other, self.end + other)
+        return Arc(selt.at + other, self.radius, self.start_angle, self.end_angle)
 
     def rotates_clockwise(self):
         return self.end_angle < self.start_angle
