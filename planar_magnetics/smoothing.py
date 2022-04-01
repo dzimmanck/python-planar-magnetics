@@ -9,6 +9,18 @@ TWO_PI = 2 * math.pi
 PI_OVER_2 = math.pi / 2
 
 
+def get_distance(p0: Point, p1: Point, p2: Point):
+    """Calculate the distance between a point and a line
+
+    Calculate the distance between a point p0 and a line formed between p1 and p2
+    """
+
+    p21 = p2 - p1
+    p10 = p1 - p0
+
+    return abs(p21.x * p10.y - p21.y * p10.x) / abs(p21)
+
+
 def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
     """Find smoothing arc that joins section of polygon formed from a point and an arc
 
@@ -119,14 +131,26 @@ def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
 
 def round_corner(arc1: Arc, arc2: Arc, radius: float):
 
-    # find the arc that rounds the corner
+    # check if the transition from the end of arc1 is continuous
+    if math.isclose(arc1.radius, get_distance(arc1.center, arc1.end, arc2.start)):
+        # if so, we just add the original arc
+        arcs = [arc1]
+    else:
+        # otherwise we add a smoothing corner
+        corner = smooth_point_to_arc(arc2.start, arc1.reverse(), radius).reverse()
+        arcs = [
+            Arc(arc1.center, arc1.radius, arc1.start_angle, corner.start_angle),
+            corner,
+        ]
+    # check if the transition to the start of arc2 is continuous
+    if math.isclose(arc2.radius, get_distance(arc2.center, arc1.end, arc2.start)):
+        # if so, we just add the original arc
+        return arcs + [arc2]
+
+    # otherwise we add a smoothing corner
     corner = smooth_point_to_arc(arc1.end, arc2, radius)
 
-    print("a", arc2.start_angle)
-    print("c", corner.end_angle)
-
-    arcs = [
-        arc1,
+    arcs += [
         corner,
         Arc(arc2.center, arc2.radius, corner.end_angle, arc2.end_angle),
     ]
@@ -136,11 +160,6 @@ def round_corner(arc1: Arc, arc2: Arc, radius: float):
 def pairwise(iterable):
     a = iter(iterable)
     return zip(a, a)
-
-
-# def smooth(polygon: Polygon, radius: float):
-#     points = polygon.points
-#     N = len(points)
 
 
 #     arcs = round_corner(points[-N], points[-N+1], radius)

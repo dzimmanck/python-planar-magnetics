@@ -73,6 +73,9 @@ class Arc:
     def rotates_counterclockwise(self):
         return self.end_angle > self.start_angle
 
+    def reverse(self):
+        return Arc(self.center, self.radius, self.end_angle, self.start_angle)
+
     def add_to_dxf_model(self, modelspace):
         """Add Arc to DXF model"""
 

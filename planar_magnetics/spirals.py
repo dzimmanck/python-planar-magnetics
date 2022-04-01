@@ -51,9 +51,8 @@ class Spiral:
             arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
 
-        # round the first corner
         N = len(arcs)
-
+        # round the first corner
         arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
 
         arcs = (
@@ -62,18 +61,13 @@ class Spiral:
             + arcs[-N + 3 :]
         )
 
-        # print(round_corner(arcs[-N + 2], arcs[-N + 3], radius)[1])
+        arcs = arcs[: -N + 2] + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
 
-        # arcs = (
-        #     arcs[: -N + 2]
-        #     + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
-        #     + arcs[-N + 4 :]
-        # )
-        # arcs = (
-        #     arcs[: -N + 3]
-        #     + round_corner(arcs[-N + 3], arcs[-N + 4], radius)
-        #     + arcs[-N + 5 :]
-        # )
+        # round the transition
+        transition = round_corner(arcs[-1], arcs[0], radius)
+
+        arcs = arcs[:-1] + transition[:2]
+        # arcs = transition[0:2] + arcs[1:-2] + transition[2:]
 
         self.polygon = Polygon(arcs, layer)
 
