@@ -1,7 +1,7 @@
 import math
 
 from planar_magnetics.geometry import Arc, Polygon, Point
-from planar_magnetics.smoothing import round_corner
+from planar_magnetics.smoothing import round_corner, smooth_polygon
 
 
 class Spiral:
@@ -29,6 +29,12 @@ class Spiral:
             for i in range(num_turns)
         ]
 
+        # verify that the minimum trace width is greater than 2 x min radius
+        min_trace_width = radii[1] - radii[0] - gap
+        assert (
+            min_trace_width > 2 * radius
+        ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
+
         # create the arcs for the inner turns
         angle = math.acos(1 - gap / radii[0])
         arcs = [Arc(at, radii[0], -math.pi + angle, math.pi)]
@@ -51,24 +57,24 @@ class Spiral:
             arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
 
-        N = len(arcs)
-        # round the first corner
-        arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
+        # N = len(arcs)
+        # # round the first corner
+        # arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
 
-        arcs = (
-            arcs[: -N + 1]
-            + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
-            + arcs[-N + 3 :]
-        )
+        # arcs = (
+        #     arcs[: -N + 1]
+        #     + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
+        #     + arcs[-N + 3 :]
+        # )
 
-        arcs = arcs[: -N + 2] + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
+        # arcs = arcs[: -N + 2] + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
 
-        # round the transition
-        transition = round_corner(arcs[-1], arcs[0], radius)
+        # # round the transition
+        # transition = round_corner(arcs[-1], arcs[0], radius)
 
-        arcs = transition[2:] + arcs[1:-1] + transition[:2]
+        # arcs = transition[2:] + arcs[1:-1] + transition[:2]
 
-        self.polygon = Polygon(arcs, layer)
+        self.polygon = smooth_polygon(Polygon(arcs, layer), radius)
 
     def estimate_dcr(self, thickness: float, temperature: float = 25):
         """Estimate the DC resistance of the winding
@@ -100,12 +106,12 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=10e-3,
         outer_radius=15e-3,
-        num_turns=2,
+        num_turns=4,
         gap=calculate_creepage(
             500 / 4, PollutionDegree.Two
         ),  # creepage per turn for spiral that needs to withstand 500V
         layer="F.Cu",
-        radius=0.5e-3,
+        radius=0.4e-3,
     )
 
     # get the KiCad S expression to PCB footprint

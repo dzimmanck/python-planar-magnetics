@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import math
 import uuid
 
-from planar_magnetics.geometry import Point, Arc
+from planar_magnetics.geometry import Point, Arc, Polygon
 
 # useful geometric constants
 TWO_PI = 2 * math.pi
@@ -49,28 +49,6 @@ def get_quadrant(angle: float):
     if angle < THREE_PI_OVER_TWO:
         return 3
     return 4
-
-    # # -------------------------------------------------------
-    # # equation for the distance between a point and a line
-    # radius * R = abs(delta.x * (p1.y - y) - delta.y * (p1.x - x))
-
-    # radius * R = delta.x * (p1.y - y) - delta.y * (p1.x - x)
-    # radius * R = delta.y * (p1.x - x) - delta.x * (p1.y - y)
-
-    # # sub in trig expressions for x and y
-    # x = center_to_center * math.cos(angle)
-    # y = center_to_center * math.sin(angle)
-
-    # (radius * R + delta.y *p1.x - delta.x * p1.y) / center_to_center = delta.y * math.cos(angle) - delta.x * math.sin(angle)
-    # (radius * R - delta.y *p1.x + delta.x * p1.y) / center_to_center = delta.x * math.sin(angle) - delta.y * math.cos(angle)
-
-    # alpha = math.atan2(delta.y, -delta.x)
-    # (radius * R + delta.y *p1.x - delta.x * p1.y) / center_to_center = R * math.sin(angle + alpha)
-
-    # alpha = math.atan2(-delta.y, delta.x)
-    # (radius * R - delta.y *p1.x + delta.x * p1.y) / center_to_center = R * math.sin(angle + alpha)
-
-    # # -------------------------------------------------------
 
 
 def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
@@ -200,22 +178,31 @@ def round_corner(arc1: Arc, arc2: Arc, radius: float):
     return arcs
 
 
-def pairwise(iterable):
-    a = iter(iterable)
-    return zip(a, a)
+def smooth_polygon(polygon: Polygon, radius: float) -> Polygon:
+    """Smooth the corners of a polygon
 
+    Adds smooth transitions with tangential arcs in between the points of a polygon
 
-#     arcs = round_corner(points[-N], points[-N+1], radius)
+    Args:
+        polygon (Polygon): The origin polygon to smooth
+        radius (float): The radius of the smoothing arcs
 
+    Returns:
+        Polygon: A new polygon with smoothed corners
+    """
 
-#     for a, b in pairwise(polygon.points):
-#         if a.end == b.start:
-#             points.extend([a, b])
-#             continue
+    assert radius > 0, "The radius must be a positive number"
 
-#         points.extend(round_corner(a, b, radius))
+    # smooth the corners
+    arcs = [polygon.points[0]]
+    for arc in polygon.points[1:]:
+        arcs.extend(round_corner(arcs.pop(), arc, radius))
 
-#     return Polygon(points, polygon.layer, polygon.width, polygon.fill)
+    # round the transition between the last point ant the first point
+    transition = round_corner(arcs[-1], arcs[0], radius)
+    arcs = transition[2:] + arcs[1:-1] + transition[:2]
+
+    return Polygon(arcs, polygon.layer, polygon.width, polygon.fill)
 
 
 if __name__ == "__main__":
