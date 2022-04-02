@@ -57,7 +57,13 @@ class Spiral:
             arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
 
-        self.polygon = smooth_polygon(Polygon(arcs, layer), radius)
+        polygon = Polygon(arcs, layer)
+
+        # Add smoothing if a positive radius is provided
+        if radius > 0:
+            polygon = smooth_polygon(polygon)
+
+        self.polygon = polygon
 
     def estimate_dcr(self, thickness: float, temperature: float = 25):
         """Estimate the DC resistance of the winding
