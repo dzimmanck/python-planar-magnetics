@@ -27,38 +27,35 @@ class TopTurn:
         outer_gap_angle = math.asin(gap / outer_radius)
 
         # angle from "at" to the corner of the termination
-        term_angle = math.asin(termination_width / outer_radius)
+        term_angle = math.asin(termination_width / outer_radius / 2)
 
-        termination_arc = Arc(at, inner_radius, -term_angle / 2, term_angle / 2)
+        termination_arc = Arc(at, inner_radius, -term_angle, term_angle)
 
         # create the inner arc
         inner_arc = Arc(
             at,
             inner_radius + viastrip_width,
-            term_angle / 2,
-            2 * math.pi - term_angle / 2 - inner_gap_angle - viastrip_angle,
+            term_angle,
+            2 * math.pi - term_angle - inner_gap_angle - viastrip_angle,
         )
 
         via_arc = Arc(
             at,
             inner_radius,
-            2 * math.pi - term_angle / 2 - inner_gap_angle - viastrip_angle,
-            2 * math.pi - term_angle / 2 - inner_gap_angle,
+            2 * math.pi - term_angle - inner_gap_angle - viastrip_angle,
+            2 * math.pi - term_angle - inner_gap_angle,
         )
 
         # create outer arc
         outer_arc = Arc(
-            at,
-            outer_radius,
-            2 * math.pi - term_angle / 2 - outer_gap_angle,
-            term_angle / 2,
+            at, outer_radius, 2 * math.pi - term_angle - outer_gap_angle, term_angle,
         )
 
         # create termination
         termination = [
             at + Point(outer_radius + 5e-3, termination_width / 2),
             at + Point(outer_radius + 5e-3, -termination_width / 2),
-            at + Point(outer_radius * math.cos(term_angle / 2), -termination_width / 2),
+            at + Point(outer_radius * math.cos(term_angle), -termination_width / 2),
         ]
 
         # create the polygon
@@ -93,38 +90,35 @@ class BottomTurn:
         outer_gap_angle = math.asin(gap / outer_radius)
 
         # angle from "at" to the corner of the termination
-        term_angle = math.asin(termination_width / outer_radius)
+        term_angle = math.asin(termination_width / outer_radius / 2)
 
-        termination_arc = Arc(at, inner_radius, term_angle / 2, -term_angle / 2)
+        termination_arc = Arc(at, inner_radius, term_angle, -term_angle)
 
         # create the inner arc
         inner_arc = Arc(
             at,
             inner_radius + viastrip_width,
-            2 * math.pi - term_angle / 2,
-            term_angle / 2 + inner_gap_angle + viastrip_angle,
+            2 * math.pi - term_angle,
+            term_angle + inner_gap_angle + viastrip_angle,
         )
 
         via_arc = Arc(
             at,
             inner_radius,
-            term_angle / 2 + inner_gap_angle + viastrip_angle,
-            term_angle / 2 + inner_gap_angle,
+            term_angle + inner_gap_angle + viastrip_angle,
+            term_angle + inner_gap_angle,
         )
 
         # create outer arc
         outer_arc = Arc(
-            at,
-            outer_radius,
-            term_angle / 2 + outer_gap_angle,
-            2 * math.pi - term_angle / 2,
+            at, outer_radius, term_angle + outer_gap_angle, 2 * math.pi - term_angle,
         )
 
         # create termination
         termination = [
             at + Point(outer_radius + 5e-3, -termination_width / 2),
             at + Point(outer_radius + 5e-3, termination_width / 2),
-            at + Point(outer_radius * math.cos(term_angle / 2), termination_width / 2),
+            at + Point(outer_radius * math.cos(term_angle), termination_width / 2),
         ]
 
         # create the polygon
@@ -355,7 +349,7 @@ if __name__ == "__main__":
         at,
         inner_radius=4.9e-3,
         outer_radius=9e-3,
-        num_turns=6,
+        number_turns=6,
         gap=0.5e-3,
         termination_width=3e-3,
     )
