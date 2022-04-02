@@ -1,6 +1,7 @@
 import math
 import uuid
-from planar_magnetics.primitives import Point, Polygon, Via, arc_from_polar
+from planar_magnetics.geometry import Arc, Point, Polygon, Via
+from planar_magnetics.cores import Core
 
 
 class TopTurn:
@@ -28,23 +29,26 @@ class TopTurn:
         # angle from "at" to the corner of the termination
         term_angle = math.asin(termination_width / outer_radius)
 
-        termination_arc = arc_from_polar(inner_radius, -term_angle / 2, term_angle / 2)
+        termination_arc = Arc(at, inner_radius, -term_angle / 2, term_angle / 2)
 
         # create the inner arc
-        inner_arc = arc_from_polar(
+        inner_arc = Arc(
+            at,
             inner_radius + viastrip_width,
             term_angle / 2,
             2 * math.pi - term_angle / 2 - inner_gap_angle - viastrip_angle,
         )
 
-        via_arc = arc_from_polar(
+        via_arc = Arc(
+            at,
             inner_radius,
             2 * math.pi - term_angle / 2 - inner_gap_angle - viastrip_angle,
             2 * math.pi - term_angle / 2 - inner_gap_angle,
         )
 
         # create outer arc
-        outer_arc = arc_from_polar(
+        outer_arc = Arc(
+            at,
             outer_radius,
             2 * math.pi - term_angle / 2 - outer_gap_angle,
             term_angle / 2,
@@ -52,14 +56,14 @@ class TopTurn:
 
         # create termination
         termination = [
-            Point(outer_radius + 5, termination_width / 2),
-            Point(outer_radius + 5, -termination_width / 2),
-            Point(outer_radius * math.cos(term_angle / 2), -termination_width / 2),
+            at + Point(outer_radius + 5e-3, termination_width / 2),
+            at + Point(outer_radius + 5e-3, -termination_width / 2),
+            at + Point(outer_radius * math.cos(term_angle / 2), -termination_width / 2),
         ]
 
         # create the polygon
         points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
-        self.polygon = Polygon(points, layer) + at
+        self.polygon = Polygon(points, layer)
 
     def __str__(self):
 
@@ -91,23 +95,26 @@ class BottomTurn:
         # angle from "at" to the corner of the termination
         term_angle = math.asin(termination_width / outer_radius)
 
-        termination_arc = arc_from_polar(inner_radius, term_angle / 2, -term_angle / 2)
+        termination_arc = Arc(at, inner_radius, term_angle / 2, -term_angle / 2)
 
         # create the inner arc
-        inner_arc = arc_from_polar(
+        inner_arc = Arc(
+            at,
             inner_radius + viastrip_width,
             2 * math.pi - term_angle / 2,
             term_angle / 2 + inner_gap_angle + viastrip_angle,
         )
 
-        via_arc = arc_from_polar(
+        via_arc = Arc(
+            at,
             inner_radius,
             term_angle / 2 + inner_gap_angle + viastrip_angle,
             term_angle / 2 + inner_gap_angle,
         )
 
         # create outer arc
-        outer_arc = arc_from_polar(
+        outer_arc = Arc(
+            at,
             outer_radius,
             term_angle / 2 + outer_gap_angle,
             2 * math.pi - term_angle / 2,
@@ -115,14 +122,14 @@ class BottomTurn:
 
         # create termination
         termination = [
-            Point(outer_radius + 5, -termination_width / 2),
-            Point(outer_radius + 5, termination_width / 2),
-            Point(outer_radius * math.cos(term_angle / 2), termination_width / 2),
+            at + Point(outer_radius + 5e-3, -termination_width / 2),
+            at + Point(outer_radius + 5e-3, termination_width / 2),
+            at + Point(outer_radius * math.cos(term_angle / 2), termination_width / 2),
         ]
 
         # create the polygon
         points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
-        self.polygon = Polygon(points, layer) + at
+        self.polygon = Polygon(points, layer)
 
     def __str__(self):
 
@@ -155,22 +162,26 @@ class InnerTurn:
         outer_gap_angle = math.asin(gap / outer_radius)
 
         # create the arcs
-        start_via_arc = arc_from_polar(
+        start_via_arc = Arc(
+            at,
             inner_radius,
             inner_gap_angle / 2 + rotation,
             inner_gap_angle / 2 + viastrip_angle + rotation,
         )
-        inner_arc = arc_from_polar(
+        inner_arc = Arc(
+            at,
             inner_radius + viastrip_width,
             inner_gap_angle / 2 + viastrip_angle + rotation,
             2 * math.pi - inner_gap_angle / 2 - viastrip_angle + rotation,
         )
-        end_via_arc = arc_from_polar(
+        end_via_arc = Arc(
+            at,
             inner_radius,
             2 * math.pi - inner_gap_angle / 2 - viastrip_angle + rotation,
             2 * math.pi - inner_gap_angle / 2 + rotation,
         )
-        outer_arc = arc_from_polar(
+        outer_arc = Arc(
+            at,
             outer_radius,
             2 * math.pi - outer_gap_angle / 2 + rotation,
             outer_gap_angle / 2 + rotation,
@@ -178,7 +189,7 @@ class InnerTurn:
 
         # create the polygon
         points = [start_via_arc, inner_arc, end_via_arc, outer_arc]
-        self.polygon = Polygon(points, layer) + at
+        self.polygon = Polygon(points, layer)
 
     def __str__(self):
         return self.polygon.__str__()
@@ -192,11 +203,11 @@ class ViaStrip:
         inner_radius: float,
         start_angle: float,
         end_angle: float,
-        size: float = 0.8,
-        drill: float = 0.4,
+        size: float = 0.8e-3,
+        drill: float = 0.4e-3,
     ):
 
-        min_spacing = 0.5
+        min_spacing = 0.5e-3
 
         # calculate how may vias we can fit in the strip
         angle = end_angle - start_angle
@@ -228,7 +239,7 @@ class Winding:
         inner_radius: float,
         outer_radius: float,
         number_turns: int,
-        gap: float = 0.5,
+        gap: float = 0.5e-3,
         termination_width: float = None,
     ):
 
@@ -262,7 +273,7 @@ class Winding:
             gap,
             termination_width,
             viastrip_angle,
-            1,
+            1e-3,
             "F.Cu",
         )
         inners = [
@@ -273,7 +284,7 @@ class Winding:
                 gap,
                 -n * rotation_per_turn - initial_rotation,
                 viastrip_angle,
-                1,
+                1e-3,
                 f"In{n}.Cu",
             )
             for n in range(1, number_turns - 1)
@@ -285,7 +296,7 @@ class Winding:
             gap,
             termination_width,
             viastrip_angle,
-            1,
+            1e-3,
             "B.Cu",
         )
         self.turns = [top] + inners + [bottom]
@@ -302,8 +313,8 @@ class Winding:
                 inner_radius,
                 -initial_angle - n * rotation_per_turn,
                 -initial_angle - n * rotation_per_turn - viastrip_angle,
-                0.8,
-                0.4,
+                0.8e-3,
+                0.4e-3,
             )
             for n in range(number_turns - 1)
         ]
@@ -333,13 +344,22 @@ class Winding:
 
 
 if __name__ == "__main__":
-    at = Point(110, 110)
+    at = Point(110e-3, 110e-3)
 
-    winding = Winding(at, 10, 15, 6, 0.5)
-    core = Core(at, 10, 15)
+    # winding = Winding(at, 10, 15, 6, 0.5)
+    # core = Core(at, 10, 15)
+    # print(winding)
+    # print(core)
+
+    winding = Winding(
+        at,
+        inner_radius=4.9e-3,
+        outer_radius=9e-3,
+        num_turns=6,
+        gap=0.5e-3,
+        termination_width=3e-3,
+    )
+
+    core = Core(at, 4.9e-3, 9e-3)
     print(winding)
     print(core)
-
-    # turn = TopTurn(at, 10, 15, 0.5, 5, math.pi / 8, 1, "F.Cu")
-    # turn = InnerTurn(at, 10, 15, 0.5, 0, math.pi / 8, 1, "F.Cu")
-    # print(turn)
