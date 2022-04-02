@@ -57,23 +57,6 @@ class Spiral:
             arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
             arcs.append(arc)
 
-        # N = len(arcs)
-        # # round the first corner
-        # arcs = round_corner(arcs[-N], arcs[-N + 1], radius) + arcs[-N + 2 :]
-
-        # arcs = (
-        #     arcs[: -N + 1]
-        #     + round_corner(arcs[-N + 1], arcs[-N + 2], radius)
-        #     + arcs[-N + 3 :]
-        # )
-
-        # arcs = arcs[: -N + 2] + round_corner(arcs[-N + 2], arcs[-N + 3], radius)
-
-        # # round the transition
-        # transition = round_corner(arcs[-1], arcs[0], radius)
-
-        # arcs = transition[2:] + arcs[1:-1] + transition[:2]
-
         self.polygon = smooth_polygon(Polygon(arcs, layer), radius)
 
     def estimate_dcr(self, thickness: float, temperature: float = 25):
