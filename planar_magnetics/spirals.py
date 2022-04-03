@@ -61,7 +61,7 @@ class Spiral:
 
         # Add smoothing if a positive radius is provided
         if radius > 0:
-            polygon = smooth_polygon(polygon)
+            polygon = smooth_polygon(polygon, radius)
 
         self.polygon = polygon
 
@@ -93,14 +93,14 @@ if __name__ == "__main__":
     # create a spiral inductor
     spiral = Spiral(
         at=Point(110e-3, 110e-3),
-        inner_radius=10e-3,
-        outer_radius=15e-3,
-        num_turns=4,
+        inner_radius=15e-3,
+        outer_radius=35e-3,
+        num_turns=8,
         gap=calculate_creepage(
             500 / 4, PollutionDegree.Two
         ),  # creepage per turn for spiral that needs to withstand 500V
         layer="F.Cu",
-        radius=0.4e-3,
+        radius=0.5e-3,
     )
 
     # get the KiCad S expression to PCB footprint

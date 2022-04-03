@@ -184,7 +184,7 @@ def smooth_polygon(polygon: Polygon, radius: float) -> Polygon:
     Adds smooth transitions with tangential arcs in between the points of a polygon
 
     Args:
-        polygon (Polygon): The origin polygon to smooth
+        polygon (Polygon): The original polygon to smooth
         radius (float): The radius of the smoothing arcs
 
     Returns:
@@ -198,9 +198,8 @@ def smooth_polygon(polygon: Polygon, radius: float) -> Polygon:
     for arc in polygon.points[1:]:
         arcs.extend(round_corner(arcs.pop(), arc, radius))
 
-    # round the transition between the last point ant the first point
-    transition = round_corner(arcs[-1], arcs[0], radius)
-    arcs = transition[2:] + arcs[1:-1] + transition[:2]
+    # don't forget to smooth the start-to-finish transition
+    arcs.extend(round_corner(arcs.pop(), arcs.pop(0), radius))
 
     return Polygon(arcs, polygon.layer, polygon.width, polygon.fill)
 
