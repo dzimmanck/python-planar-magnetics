@@ -30,7 +30,9 @@ class Spiral:
         ]
 
         # verify that the minimum trace width is greater than 2 x min radius
-        min_trace_width = radii[1] - radii[0] - gap
+        min_trace_width = (
+            radii[1] - radii[0] - gap if num_turns > 1 else outer_radius - inner_radius
+        )
         assert (
             min_trace_width > 2 * radius
         ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
@@ -93,14 +95,14 @@ if __name__ == "__main__":
     # create a spiral inductor
     spiral = Spiral(
         at=Point(110e-3, 110e-3),
-        inner_radius=15e-3,
-        outer_radius=35e-3,
-        num_turns=8,
+        inner_radius=6e-3,
+        outer_radius=12e-3,
+        num_turns=5,
         gap=calculate_creepage(
             500 / 4, PollutionDegree.Two
         ),  # creepage per turn for spiral that needs to withstand 500V
         layer="F.Cu",
-        radius=0.5e-3,
+        radius=0.3e-3,
     )
 
     # get the KiCad S expression to PCB footprint
