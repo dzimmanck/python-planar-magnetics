@@ -1,6 +1,55 @@
 import math
 import uuid
-from planar_magnetics.geometry import Arc, Point, Polygon
+from planar_magnetics.geometry import (
+    Arc,
+    Point,
+    Polygon,
+    TWO_PI,
+    PI_OVER_TWO,
+    THREE_PI_OVER_TWO,
+)
+
+
+def calculate_core_extension(area: float, radius: float, opening_width: float) -> float:
+    """Calculate the required core extension to have the same area as the center-post
+
+    Args:
+        area (float): The total required area of the outer legs
+        radius (float): The radius of the edge of the outer legs
+
+    Returns:
+        float: The required extension
+    """
+
+    # first, calculate the area of a single leg with no extension
+    start_angle = math.asin((opening_width / 2) / radius)
+    end_angle = PI_OVER_TWO - start_angle
+
+    x = math.sqrt(radius ** 2 - (opening_width / 2) ** 2)
+
+    # start with the area of the square from the center to the corner
+    min_leg_area = x ** 2
+
+    # subtract the opening triangles
+    min_leg_area -= x * opening_width / 2
+
+    # subtract the arc
+    min_leg_area -= ((end_angle - start_angle) / TWO_PI) * (math.pi * radius ** 2)
+
+    # calculated the required extension area
+    extension_area = area / 4 - min_leg_area
+
+    # if the minimum leg area is already sufficient, then just return 0
+    if extension_area <= 0:
+        return 0
+
+    # calculate the minimum width of the leg
+    x = math.cos(start_angle) - math.cos(end_angle)
+
+    # calculate the retuired extension to equalize the area
+    extension = (extension_area - x ** 2) / (2 * x)
+
+    return extension
 
 
 class Core:
@@ -31,40 +80,53 @@ class Core:
         # calculate the centerpost area
         self.centerpost_area = math.pi * self.centerpost_radius ** 2
 
-        # create polygons for the outer post cutouts
-        extension = 2e-3  # FIXME:  This should not be a constant
+        # calculate the radius of the outer post cutouts
         outer_cutout_radius = self.outerpost_radius - edge_to_core
+
+        # calculate the start angle first outer post cutout leg
         start_angle = math.asin(
             (termination_width / 2 + edge_to_trace) / outer_cutout_radius
         )
+
+        # calculate the end angle of the first outer post cutout leg
         end_angle = math.pi / 2 - start_angle
+
+        # create polygons for the outer post cutouts
+        extension = calculate_core_extension(
+            area=self.centerpost_area,
+            radius=self.outerpost_radius,
+            opening_width=termination_width + 2 * edge_to_trace + 2 * edge_to_core,
+        )
+        cutout_extension = extension + edge_to_core
+
+        # calculate the arcs
         arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
-        corner1 = arc.end + Point(0, extension)
-        corner3 = arc.start + Point(extension, 0)
+        corner1 = arc.end + Point(0, cutout_extension)
+        corner3 = arc.start + Point(cutout_extension, 0)
         corner2 = Point(corner3.x, corner1.y)
         leg1 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
         arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
-        corner1 = arc.end + Point(-extension, 0)
-        corner3 = arc.start + Point(0, extension)
+        corner1 = arc.end + Point(-cutout_extension, 0)
+        corner3 = arc.start + Point(0, cutout_extension)
         corner2 = Point(corner1.x, corner3.y)
         leg2 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
         arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
-        corner1 = arc.end + Point(0, -extension)
-        corner3 = arc.start + Point(-extension, 0)
+        corner1 = arc.end + Point(0, -cutout_extension)
+        corner3 = arc.start + Point(-cutout_extension, 0)
         corner2 = Point(corner3.x, corner1.y)
         leg3 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
         arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
-        corner1 = arc.end + Point(extension, 0)
-        corner3 = arc.start + Point(0, -extension)
+        corner1 = arc.end + Point(cutout_extension, 0)
+        corner3 = arc.start + Point(0, -cutout_extension)
         corner2 = Point(corner1.x, corner2.y)
         leg4 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 

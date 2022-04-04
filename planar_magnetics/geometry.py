@@ -4,6 +4,11 @@ import math
 import uuid
 import ezdxf
 
+# useful geometric constants
+TWO_PI = 2 * math.pi
+PI_OVER_TWO = math.pi / 2
+THREE_PI_OVER_TWO = 3 * math.pi / 2
+
 
 @dataclass
 class Point:
