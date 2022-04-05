@@ -2,6 +2,7 @@ import math
 
 from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import round_corner, smooth_polygon
+from planar_magnetics.utils import dcr_of_annulus
 
 
 class Spiral:
@@ -67,22 +68,28 @@ class Spiral:
 
         self.polygon = polygon
 
-    def estimate_dcr(self, thickness: float, temperature: float = 25):
+        self.radii = radii
+
+    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
         dc resistance of each turn and adding the estimated inter-turn via resistance 
         
         Args:
-            thickness: thickness of the layer
-            temperature: winding temperature in decrees C
+            thickness (float): The copper thickness of the layer
+            rho (float): The conductivity of the material used in the layer
 
         Returns:
-            float:s An estimation of the DC resistance in ohms
+            float: An estimation of the DC resistance in ohms
         """
 
-        # TODO
-        raise NotImplementedError
+        # sum the resistance of each turn
+        resistance = 0
+        for r0, r1 in zip(radii[0:-1], radii[1:]):
+            resistace += dcr_of_annulus(thickness, r0, r1, rho)
+
+        return resistace
 
     def __str__(self):
         return self.polygon.__str__()

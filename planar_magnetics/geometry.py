@@ -87,6 +87,27 @@ class Arc:
     def reverse(self):
         return Arc(self.center, self.radius, self.end_angle, self.start_angle)
 
+    def rotate(self, angle: float):
+        """Rotate an arc about its center"""
+        return Arc(
+            self.center, self.radius, self.start_angle + angle, self.end_angle + angle
+        )
+
+    def rotate_about(self, about: Point, angle: float):
+        """ Rotate an arc around a reference point"""
+
+        # calculate the new center for the arc
+        offset = self.center - about
+        sin_angle = math.sin(angle)
+        cos_angle = math.cos(angle)
+        x = offset.x * cos_angle - offset.y * sin_angle
+        y = offset.y * cos_angle + offset.x * sin_angle
+        center = about + Point(x, y)
+
+        return Arc(
+            center, self.radius, self.start_angle + angle, self.end_angle + angle
+        )
+
     def add_to_dxf_model(self, modelspace):
         """Add Arc to DXF model"""
 
