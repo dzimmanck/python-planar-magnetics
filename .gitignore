@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # KiCAD artifact files
-.kicad_mod
+*.kicad_mod
