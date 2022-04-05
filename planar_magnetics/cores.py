@@ -137,7 +137,7 @@ class Core:
         # create the centerpost milling
         end = self.at + Point(self.centerpost_radius + self.edge_to_core, 0)
         layer = "Edge.Cuts"
-        centerpost = f"(gr_circle (center {self.at}) (end {end}) (layer {layer}) (width 0.1) (fill none) (tstamp {self.tstamp}))"
+        centerpost = f"(fp_circle (center {self.at}) (end {end}) (layer {layer}) (width 0.1) (fill none) (tstamp {self.tstamp}))"
 
         # create the milling for each corner
         outerposts = "\n".join(outerpost.__str__() for outerpost in self.outerposts)
