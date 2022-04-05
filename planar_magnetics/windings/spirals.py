@@ -86,10 +86,13 @@ class Spiral:
 
         # sum the resistance of each turn
         resistance = 0
-        for r0, r1 in zip(radii[0:-1], radii[1:]):
-            resistace += dcr_of_annulus(thickness, r0, r1, rho)
+        for r0, r1 in zip(self.radii[0:-1], self.radii[1:]):
+            resistance += dcr_of_annulus(thickness, r0, r1, rho)
 
-        return resistace
+        return resistance
+
+    def plot(self, max_angle: float = math.pi / 36):
+        self.polygon.plot(max_angle)
 
     def __str__(self):
         return self.polygon.__str__()
@@ -97,7 +100,8 @@ class Spiral:
 
 if __name__ == "__main__":
 
-    from planar_magnetics.utils import calculate_creepage, PollutionDegree
+    from planar_magnetics.creepage import calculate_creepage
+    from planar_magnetics.utils import weight_to_thickness
 
     # create a spiral inductor
     spiral = Spiral(
@@ -105,12 +109,28 @@ if __name__ == "__main__":
         inner_radius=6e-3,
         outer_radius=12e-3,
         num_turns=5,
-        gap=calculate_creepage(
-            500 / 4, PollutionDegree.Two
-        ),  # creepage per turn for spiral that needs to withstand 500V
+        gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
     )
 
-    # get the KiCad S expression to PCB footprint
-    print(spiral)
+    # estimate the resistance of the spiral
+    thickness = weight_to_thickness(4)
+    resistance = spiral.estimate_dcr(thickness)
+    print(f"Estimated DCR of this spiral is {resistance*1e3} mOhms")
+
+    # export to dxf
+    import ezdxf
+
+    doc = ezdxf.new()
+    msp = doc.modelspace()
+
+    path = spiral.polygon.to_poly_path()
+
+    import matplotlib.pyplot as mp
+
+    spiral.plot()
+    mpolygon = msp.add_mpolygon(color=2, fill_color=None)
+    mpolygon.paths.add_polyline_path(path)
+
+    doc.saveas("test.dxf")

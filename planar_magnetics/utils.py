@@ -16,6 +16,13 @@ def weight_to_thickness(weight: float):
     return 35e-6 * weight
 
 
+def dcr_of_sheet(thickness: float, width: float, length: float, rho: float = 1.68e-8):
+    """Calculate the resistance of a rectangular sheet
+    """
+    resistance = (length * rho) / (width * thickness)
+    return resistance
+
+
 def dcr_of_annulus(
     thickness: float, inner_radius: float, outer_radius: float, rho: float = 1.68e-8
 ):

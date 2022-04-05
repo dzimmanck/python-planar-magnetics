@@ -108,6 +108,33 @@ class Arc:
             center, self.radius, self.start_angle + angle, self.end_angle + angle
         )
 
+    def interpolate(self, max_angle: float = math.pi / 36):
+        """Create a PWL approximation of the arc with a list of points
+        """
+        points = []
+        angle = self.start_angle
+        if self.rotates_counterclockwise():
+            while angle < self.end_angle:
+                point = Point(
+                    self.radius * math.cos(angle), self.radius * math.sin(angle)
+                )
+                points.append(self.center + point)
+                angle += max_angle
+        else:
+            while angle > self.end_angle:
+                point = Point(
+                    self.radius * math.cos(angle), self.radius * math.sin(angle)
+                )
+                points.append(self.center + point)
+                angle -= max_angle
+
+        point = Point(
+            self.radius * math.cos(self.end_angle),
+            self.radius * math.sin(self.end_angle),
+        )
+        points.append(self.center + point)
+        return points
+
     def add_to_dxf_model(self, modelspace):
         """Add Arc to DXF model"""
 
@@ -141,6 +168,35 @@ class Polygon:
         )
         expression = f"(fp_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
+
+    def to_poly_path(self, max_angle: float = math.pi / 36):
+        """Create a list of tuples representing the polypath
+        """
+        points = []
+        for point in self.points:
+
+            if isinstance(point, Arc):
+                points.extend([(p.x, p.y) for p in point.interpolate(max_angle)])
+                continue
+            points.append((point.x, point.y))
+        return points
+
+    def add_to_dxf_model(self, modelspace):
+
+        for point in self.points:
+            point.add_to_dxf_model(modelspace)
+
+    def plot(self, max_angle: float = math.pi / 36):
+        """Create a plot preview of the polygon
+        """
+        import matplotlib.pyplot as mp
+
+        path = self.to_poly_path(max_angle)
+        mp.figure(figsize=(8, 8))
+        mp.axis("equal")
+        x, y = zip(*path)
+        mp.fill(x, y)
+        mp.show()
 
 
 if __name__ == "__main__":
