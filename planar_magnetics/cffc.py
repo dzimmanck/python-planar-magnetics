@@ -2,6 +2,8 @@ import math
 import uuid
 from planar_magnetics.geometry import Arc, Point, Polygon, Via
 from planar_magnetics.cores import Core
+from planar_magnetics.creepage import Classification, calculate_creepage
+from planar_magnetics.kicad import Footprint, Pad, PadType, Reference, Value
 
 
 class TopTurn:
@@ -53,8 +55,8 @@ class TopTurn:
 
         # create termination
         termination = [
-            at + Point(outer_radius + 5e-3, termination_width / 2),
-            at + Point(outer_radius + 5e-3, -termination_width / 2),
+            at + Point(outer_radius + termination_width, termination_width / 2),
+            at + Point(outer_radius + termination_width, -termination_width / 2),
             at + Point(outer_radius * math.cos(term_angle), -termination_width / 2),
         ]
 
@@ -116,8 +118,8 @@ class BottomTurn:
 
         # create termination
         termination = [
-            at + Point(outer_radius + 5e-3, -termination_width / 2),
-            at + Point(outer_radius + 5e-3, termination_width / 2),
+            at + Point(outer_radius + termination_width, -termination_width / 2),
+            at + Point(outer_radius + termination_width, termination_width / 2),
             at + Point(outer_radius * math.cos(term_angle), termination_width / 2),
         ]
 
@@ -235,6 +237,7 @@ class Winding:
         number_turns: int,
         gap: float = 0.5e-3,
         termination_width: float = None,
+        viastrip_width: float = 1e-3,
     ):
 
         if termination_width is None:
@@ -267,7 +270,7 @@ class Winding:
             gap,
             termination_width,
             viastrip_angle,
-            1e-3,
+            viastrip_width,
             "F.Cu",
         )
         inners = [
@@ -278,7 +281,7 @@ class Winding:
                 gap,
                 -n * rotation_per_turn - initial_rotation,
                 viastrip_angle,
-                1e-3,
+                viastrip_width,
                 f"In{n}.Cu",
             )
             for n in range(1, number_turns - 1)
@@ -290,7 +293,7 @@ class Winding:
             gap,
             termination_width,
             viastrip_angle,
-            1e-3,
+            viastrip_width,
             "B.Cu",
         )
         self.turns = [top] + inners + [bottom]
@@ -337,23 +340,89 @@ class Winding:
         return expression
 
 
+class Cffc:
+    def __init__(
+        self,
+        inner_radius: float,
+        outer_radius: float,
+        number_turns: int,
+        voltage: float,
+        classification: Classification = Classification.B4,
+    ):
+        origin = Point(0, 0)
+
+        self.inner_radius = inner_radius
+        self.outer_radius = outer_radius
+
+        # calculate the required creepage distance
+        creapage = calculate_creepage(voltage, classification)
+
+        self.termination_width = outer_radius - inner_radius
+
+        # create the windings
+        self.winding = Winding(
+            at=origin,
+            inner_radius=inner_radius,
+            outer_radius=outer_radius,
+            number_turns=number_turns,
+            gap=creapage,
+            termination_width=self.termination_width,
+        )
+
+        # create the core
+        self.core = Core(
+            at=origin,
+            inner_radius=inner_radius,
+            outer_radius=outer_radius,
+            termination_width=self.termination_width,
+            edge_to_trace=0.635e-3,
+            edge_to_core=0.5e-3,
+        )
+
+    def __str__(self):
+        expression = self.winding.__str__() + self.core.__str__()
+        return expression
+
+    def to_kicad_footprint(self, name: str):
+        """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)
+        """
+
+        # vias are not allowed in KiCAD footprints, so convert the via strips to through-hole pads
+        pads = [
+            via.to_pad() for viastrip in self.winding.viastrips for via in viastrip.vias
+        ]
+
+        # add the termination pads
+        location = Point(self.outer_radius + self.termination_width / 2, 0)
+        size = self.termination_width / 2
+        pads.extend(
+            [
+                Pad(PadType.SMD, 1, location, size, ("F.Cu",)),
+                Pad(PadType.SMD, 2, location, size, ("B.Cu",)),
+            ]
+        )
+
+        # add the reference and value silkscreens
+        x_loc = self.core.width / 2 + 1e-3
+        height_avail = (self.core.width - self.termination_width) / 2
+        font_size = min(2e-3, height_avail / 4)
+        val_loc = Point(x_loc, self.termination_width / 2 + height_avail / 3)
+        ref_loc = Point(x_loc, self.termination_width / 2 + 2 * height_avail / 3)
+        reference = Reference(ref_loc)
+        value = Value(val_loc)
+
+        # create a footprint from the various elements
+        contents = [self.core] + self.winding.turns + pads + [reference, value]
+        footprint = Footprint(name, contents=contents)
+
+        # write the footprint to a file
+        fh = open(f"{name}.kicad_mod", "w")
+        fh.write(footprint.__str__())
+        fh.close()
+
+
 if __name__ == "__main__":
-    at = Point(110e-3, 110e-3)
 
-    # winding = Winding(at, 10, 15, 6, 0.5)
-    # core = Core(at, 10, 15)
-    # print(winding)
-    # print(core)
+    inductor = Cffc(inner_radius=4.9e-3, outer_radius=9e-3, number_turns=6, voltage=500)
 
-    winding = Winding(
-        at,
-        inner_radius=4.9e-3,
-        outer_radius=9e-3,
-        number_turns=6,
-        gap=0.5e-3,
-        termination_width=3e-3,
-    )
-
-    core = Core(at, 4.9e-3, 9e-3)
-    print(winding)
-    print(core)
+    inductor.to_kicad_footprint("Cffc_Inductor_03")

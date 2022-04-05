@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 import math
 import uuid
 import ezdxf
+from planar_magnetics.kicad import Pad, PadType
 
 # useful geometric constants
 TWO_PI = 2 * math.pi
@@ -33,9 +34,14 @@ class Via:
     at: float = 0.0
     size: float = 0.8
     drill: float = 0.4
-    layers: (str) = ("F.Cu")
+    layers: (str) = ("F.Cu",)
     remove_unused_layers = True
     tstamp: uuid.UUID = uuid.uuid4()
+
+    def to_pad(self, number: int = 1):
+        """Convert to an equivalent through-hole pad"""
+
+        return Pad(PadType.TH, number, self.at, self.size, ("*.Cu",), self.drill)
 
     def __str__(self):
         layers = " ".join(self.layers)
@@ -112,7 +118,7 @@ class Polygon:
                 for point in self.points
             ]
         )
-        expression = f"(gr_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
+        expression = f"(fp_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
 
 

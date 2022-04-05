@@ -106,6 +106,10 @@ class Core:
         corner2 = Point(corner3.x, corner1.y)
         leg1 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
 
+        # calculate the core cutout dimensions, which can be used for silkscreen placement
+        self.width = 2 * (arc.start.x + cutout_extension)
+        self.length = self.width
+
         start_angle += math.pi / 2
         end_angle += math.pi / 2
         arc = Arc(at, outer_cutout_radius, start_angle, end_angle)
@@ -137,7 +141,7 @@ class Core:
         # create the centerpost milling
         end = self.at + Point(self.centerpost_radius + self.edge_to_core, 0)
         layer = "Edge.Cuts"
-        centerpost = f"(gr_circle (center {self.at}) (end {end}) (layer {layer}) (width 0.1) (fill none) (tstamp {self.tstamp}))"
+        centerpost = f"(fp_circle (center {self.at}) (end {end}) (layer {layer}) (width 0.1) (fill none) (tstamp {self.tstamp}))"
 
         # create the milling for each corner
         outerposts = "\n".join(outerpost.__str__() for outerpost in self.outerposts)
