@@ -50,22 +50,27 @@ Currently, the library only supports creation of a [Compensating Fringing Field 
 ```python
 from planar_magnetics.inductors import Cffc
 from planar_magnetics.utils import weight_to_thickness
+from planar_magnetics.utils import weight_to_thickness
 
-# create a spiral winding
+# create an inductor using the CFFC technique
 inductor = Cffc(inner_radius=4.9e-3, outer_radius=9e-3, number_turns=5, voltage=500)
 
 # estimate the dc resistance of this inductor
-# using the CFFC strucure, a 5 turn inductor requires 6 layers
+# using the CFFC structure, a 5 turn inductor requires 6 layers
 # assume we are using 1.5 oz on top/botton and 2oz on interior layers
-thicknesses = [weight_to_thickness(1.5),
-           weight_to_thickness(2),
-           weight_to_thickness(2),
-           weight_to_thickness(2),
-           weight_to_thickness(2),
-           weight_to_thickness(1.5)]
-dcr = spiral.estimate_dcr(thicknesses)
+thicknesses = [
+    weight_to_thickness(1.5),
+    weight_to_thickness(2),
+    weight_to_thickness(2),
+    weight_to_thickness(2),
+    weight_to_thickness(2),
+    weight_to_thickness(1.5),
+]
+dcr = inductor.estimate_dcr(thicknesses)
 print(f"Estimated DCR of this inductor is {dcr*1e3} mOhms")
 
 # create a complete KiCAD footprint
 inductor.to_kicad_footprint("cffc_inductor")
 ```
+
+![KiCAD Footprint](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/cffc_kicad_footprint.png)
