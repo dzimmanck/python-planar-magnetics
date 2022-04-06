@@ -12,53 +12,60 @@ The library allows both generation of planar magnetic 2-D elements (core cutouts
 ```python
 from planar_magnetics.creepage import calculate_creepage
 from planar_magnetics.utils import weight_to_thickness
+from planar_magnetics.windings import Spiral
 
 # create a spiral inductor
-    spiral = Spiral(
-        at=Point(110e-3, 110e-3),
-        inner_radius=6e-3,
-        outer_radius=12e-3,
-        num_turns=3,
-        gap=calculate_creepage(500, 1),
-        layer="F.Cu",
-        radius=0.3e-3,
-    )
+spiral = Spiral(
+    at=Point(110e-3, 110e-3),
+    inner_radius=6e-3,
+    outer_radius=12e-3,
+    num_turns=3,
+    gap=calculate_creepage(500, 1),
+    layer="F.Cu",
+    radius=0.3e-3,
+)
 
-    # estimate the dc resistance of this spiral assuming 2 oz copper
-    dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
-    print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
+# estimate the dc resistance of this spiral assuming 2 oz copper
+dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
+print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
 
-    # dispay a preview of the spiral from Python using matplotlib
-    spiral.plot()
+# dispay a preview of the spiral from Python using matplotlib
+spiral.plot()
 
-    # export this to a DXF file
-    spiral.export_to_dxf("spiral.dxf")
+# export this to a DXF file
+spiral.export_to_dxf("spiral.dxf")
 
-    # get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
-    print(spiral)
+# get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
+print(spiral)
 ```
 
-<img src="images/4turn_spiral.png" alt="4 turn spiral" style="width:400px;"/>
+Preview (Matplotlib)       |  KiCAD                    |  DXF
+:-------------------------:|:-------------------------:|:--------------------------:
+![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_matplotlib.png)  |  ![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_kicad.png)  |  ![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_dxf.png)
 
-Create a [Compensating Fringing Field Concept](https://www.psma.com/sites/default/files/uploads/files/Introduction%20of%20the%20CFFC-Compensating%20Fringing%20Field%20Concept%20Schaefer%2C%20ETH%20Zurich.pdf) inductor.
+## Example: Creating a complete inductor
+
+Currently, the library only supports creation of a [Compensating Fringing Field Concept](https://www.psma.com/sites/default/files/uploads/files/Introduction%20of%20the%20CFFC-Compensating%20Fringing%20Field%20Concept%20Schaefer%2C%20ETH%20Zurich.pdf) inductor as a complete part.  Support for this part was added first as it has a relatively simple via structure and as it is an inductor, only requires functional isolation which simplifies meeting spacing requirements.  Support for more complex parts such as higher turn count inductors and transformers are planned for the future.
 
 ```python
-from planars import Cffc
+from planar_magnetics.inductors import Cffc
+from planar_magnetics.utils import weight_to_thickness
 
 # create a spiral winding
-cffc = Cffc(inner_radius=10e-3,
-            outer_radius=15e-3,
-                gap = 0.1e-3)
+inductor = Cffc(inner_radius=4.9e-3, outer_radius=9e-3, number_turns=5, voltage=500)
 
-# print a KiCAD S-expression
-print(cffc)
+# estimate the dc resistance of this inductor
+# using the CFFC strucure, a 5 turn inductor requires 6 layers
+# assume we are using 1.5 oz on top/botton and 2oz on interior layers
+thicknesses = [weight_to_thickness(1.5),
+           weight_to_thickness(2),
+           weight_to_thickness(2),
+           weight_to_thickness(2),
+           weight_to_thickness(2),
+           weight_to_thickness(1.5)]
+dcr = spiral.estimate_dcr(thicknesses)
+print(f"Estimated DCR of this inductor is {dcr*1e3} mOhms")
+
+# create a complete KiCAD footprint
+inductor.to_kicad_footprint("cffc_inductor")
 ```
-
-# TODO:
-
-1.  Add methods to estimate DC resistance
-2.  Add helper functions for calculating required geometric gaps for creepage and clearance requirements
-3.  Add DXF export
-4.  Add Transformer class which optimally places vias that interconnect winding layers.  This should support optimal shield layers as well.
-6.  Better support for core cutouts
-7.  Output KiCAD component files rather the just the S-expression of the geometry
