@@ -1,7 +1,9 @@
 import math
-
+from typing import Union
+from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import round_corner, smooth_polygon
+from planar_magnetics.utils import dcr_of_annulus
 
 
 class Spiral:
@@ -67,30 +69,59 @@ class Spiral:
 
         self.polygon = polygon
 
-    def estimate_dcr(self, thickness: float, temperature: float = 25):
+        self.radii = radii
+
+    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
         dc resistance of each turn and adding the estimated inter-turn via resistance 
         
         Args:
-            thickness: thickness of the layer
-            temperature: winding temperature in decrees C
+            thickness (float): The copper thickness of the layer
+            rho (float): The conductivity of the material used in the layer
 
         Returns:
-            float:s An estimation of the DC resistance in ohms
+            float: An estimation of the DC resistance in ohms
         """
 
-        # TODO
-        raise NotImplementedError
+        # sum the resistance of each turn
+        resistance = 0
+        for r0, r1 in zip(self.radii[0:-1], self.radii[1:]):
+            resistance += dcr_of_annulus(thickness, r0, r1, rho)
+
+        return resistance
+
+    def plot(self, max_angle: float = math.pi / 36):
+        self.polygon.plot(max_angle)
+
+    def export_to_dxf(
+        self,
+        filename: Union[str, Path],
+        version: str = "R2000",
+        encoding: str = None,
+        fmt: str = "asc",
+    ) -> None:
+        """Export the polygon to a dxf file
+
+        Args:
+            filename: file name as string
+            version: DXF version
+            encoding: override default encoding as Python encoding string like ``'utf-8'``
+            fmt: ``'asc'`` for ASCII DXF (default) or ``'bin'`` for Binary DXF
+        """
+
+        self.polygon.export_to_dxf(filename, version, encoding, fmt)
 
     def __str__(self):
+        """Print KiCAD S-Expression of the spiral.  Assumes units are mm."""
         return self.polygon.__str__()
 
 
 if __name__ == "__main__":
 
-    from planar_magnetics.utils import calculate_creepage, PollutionDegree
+    from planar_magnetics.creepage import calculate_creepage
+    from planar_magnetics.utils import weight_to_thickness
 
     # create a spiral inductor
     spiral = Spiral(
@@ -98,12 +129,15 @@ if __name__ == "__main__":
         inner_radius=6e-3,
         outer_radius=12e-3,
         num_turns=5,
-        gap=calculate_creepage(
-            500 / 4, PollutionDegree.Two
-        ),  # creepage per turn for spiral that needs to withstand 500V
+        gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
     )
 
-    # get the KiCad S expression to PCB footprint
-    print(spiral)
+    # estimate the resistance of the spiral
+    thickness = weight_to_thickness(4)
+    resistance = spiral.estimate_dcr(thickness)
+    print(f"Estimated DCR of this spiral is {resistance*1e3} mOhms")
+
+    # export to dxf
+    spiral.export_to_dxf("test.dxf")

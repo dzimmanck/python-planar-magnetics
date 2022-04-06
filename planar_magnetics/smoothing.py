@@ -3,35 +3,15 @@ from dataclasses import dataclass
 import math
 import uuid
 
-from planar_magnetics.geometry import Point, Arc, Polygon
-
-# useful geometric constants
-TWO_PI = 2 * math.pi
-PI_OVER_TWO = math.pi / 2
-THREE_PI_OVER_TWO = 3 * math.pi / 2
-
-
-def get_oriented_distance(p0: Point, p1: Point, p2: Point):
-    """Calculate the oriented distance between a point and a line
-
-    Calculate the distance between a point p0 and a line formed between p1 and p2.  This result is
-    the "oriented" distance, meaning it is signed.  What this means that if you thought of the line
-    from p1-to-p2 as a vector that pointed up, as positive result would mean p0 was on the right
-    side of the vector and a negative result would mean p0 was on the left side.
-    """
-    p21 = p2 - p1
-    p10 = p1 - p0
-
-    return (p21.x * p10.y - p21.y * p10.x) / abs(p21)
-
-
-def get_distance(p0: Point, p1: Point, p2: Point):
-    """Calculate the distance between a point and a line
-
-    Calculate the distance between a point p0 and a line formed between p1 and p2
-    """
-
-    return abs(get_oriented_distance(p0, p1, p2))
+from planar_magnetics.geometry import (
+    Point,
+    Arc,
+    Polygon,
+    get_distance,
+    TWO_PI,
+    PI_OVER_TWO,
+    THREE_PI_OVER_TWO,
+)
 
 
 def get_quadrant(angle: float):
