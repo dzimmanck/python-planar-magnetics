@@ -114,6 +114,7 @@ class Spiral:
         self.polygon.export_to_dxf(filename, version, encoding, fmt)
 
     def __str__(self):
+        """Print KiCAD S-Expression of the spiral.  Assumes units are mm."""
         return self.polygon.__str__()
 
 
