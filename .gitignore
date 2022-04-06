@@ -128,5 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# KiCAD artifact files
+# export artifact files that may be generated during testing
 *.kicad_mod
+*.dxf

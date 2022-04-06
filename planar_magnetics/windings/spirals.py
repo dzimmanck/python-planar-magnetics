@@ -122,15 +122,8 @@ if __name__ == "__main__":
     # export to dxf
     import ezdxf
 
-    doc = ezdxf.new()
+    doc = ezdxf.new("R2000")
     msp = doc.modelspace()
-
     path = spiral.polygon.to_poly_path()
-
-    import matplotlib.pyplot as mp
-
-    spiral.plot()
-    mpolygon = msp.add_mpolygon(color=2, fill_color=None)
-    mpolygon.paths.add_polyline_path(path)
-
-    doc.saveas("test.dxf")
+    mpolygon = msp.add_lwpolyline(path, close=True)
+    doc.saveas("test_true_arc.dxf")

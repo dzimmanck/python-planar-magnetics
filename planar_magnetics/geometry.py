@@ -11,6 +11,29 @@ PI_OVER_TWO = math.pi / 2
 THREE_PI_OVER_TWO = 3 * math.pi / 2
 
 
+def get_oriented_distance(p0: Point, p1: Point, p2: Point):
+    """Calculate the oriented distance between a point and a line
+
+    Calculate the distance between a point p0 and a line formed between p1 and p2.  This result is
+    the "oriented" distance, meaning it is signed.  What this means that if you thought of the line
+    from p1-to-p2 as a vector that pointed up, as positive result would mean p0 was on the right
+    side of the vector and a negative result would mean p0 was on the left side.
+    """
+    p21 = p2 - p1
+    p10 = p1 - p0
+
+    return (p21.x * p10.y - p21.y * p10.x) / abs(p21)
+
+
+def get_distance(p0: Point, p1: Point, p2: Point):
+    """Calculate the distance between a point and a line
+
+    Calculate the distance between a point p0 and a line formed between p1 and p2
+    """
+
+    return abs(get_oriented_distance(p0, p1, p2))
+
+
 @dataclass
 class Point:
     x: float
@@ -19,14 +42,24 @@ class Point:
     def __str__(self):
         return f"{self.x*1e3} {self.y*1e3}"
 
-    def __add__(self, other: Point):
+    def __add__(self, other: Point) -> Point:
         return Point(self.x + other.x, self.y + other.y)
 
-    def __sub__(self, other: Point):
+    def __sub__(self, other: Point) -> Point:
         return Point(self.x - other.x, self.y - other.y)
 
-    def __abs__(self):
+    def __abs__(self) -> float:
         return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def __eq__(self, other: Point) -> bool:
+        if not math.isclose(self.x, other.x):
+            return False
+        if not math.isclose(self.y, other.y):
+            return False
+        return True
+
+    def __ne__(self, other: Point) -> bool:
+        return not self.__eq__(other)
 
 
 @dataclass
@@ -64,13 +97,21 @@ class Arc:
     start: Point = field(init=False)
     mid: Point = field(init=False)
     end: Point = field(init=False)
+    bulge: float = field(init=False)
 
     def __post_init__(self):
-        """Derivce the three point representation of the Arc"""
+        """Derived parameters"""
+
+        # three-point representation
         mid_angle = (self.start_angle + self.end_angle) / 2
         self.start = self.center + point_from_polar(self.radius, self.start_angle)
         self.mid = self.center + point_from_polar(self.radius, mid_angle)
         self.end = self.center + point_from_polar(self.radius, self.end_angle)
+
+        # bulge (for dxf generation)
+        width = abs(self.end - self.start)
+        sagitta = get_oriented_distance(self.mid, self.start, self.end)
+        self.bulge = 2 * sagitta / width
 
     def __str__(self):
         return f"(arc (start {self.start}) (mid {self.mid}) (end {self.end}))"
@@ -169,8 +210,35 @@ class Polygon:
         expression = f"(fp_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
 
-    def to_poly_path(self, max_angle: float = math.pi / 36):
-        """Create a list of tuples representing the polypath
+    def to_poly_path(self):
+        """Create a true arc polypath
+        """
+        points = []
+        last = None
+        for point in self.points:
+
+            if isinstance(point, Arc):
+                # if the start of this is not the end of the last arc, we need to add a point
+                if last is not None and point.start != last:
+                    points.append((last.x, last.y))
+
+                points.append((point.start.x, point.start.y, 0, 0, point.bulge))
+                last = point.end
+                continue
+
+            if last is not None and point != last:
+                points.append((last.x, last.y))
+            points.append((point.x, point.y))
+            last = None
+
+        # Make sure to add the last point if there is one left over from an arc
+        if last is not None:
+            points.append((last.x, last.y))
+
+        return points
+
+    def to_pwl_path(self, max_angle: float = math.pi / 36):
+        """Create a list of tuples representing the polypath as a PWL approximation
         """
         points = []
         for point in self.points:
@@ -191,7 +259,7 @@ class Polygon:
         """
         import matplotlib.pyplot as mp
 
-        path = self.to_poly_path(max_angle)
+        path = self.to_pwl_path(max_angle)
         mp.figure(figsize=(8, 8))
         mp.axis("equal")
         x, y = zip(*path)
@@ -201,4 +269,13 @@ class Polygon:
 
 if __name__ == "__main__":
 
-    arc = Arc(Point(0, 0), 10, 0, math.pi / 2)
+    p0 = Point(0, 4)
+    p1 = Point(4, 4)
+    p2 = Point(4, 0)
+    p3 = Point(0, 0)
+    arc = Arc(Point(2, 4), 1, math.pi, 0)
+    polygon = Polygon([p0, arc, p1, p2, p3])
+    # polygon.plot(max_angle=math.pi / 8)
+
+    path = polygon.to_poly_path()
+    print(path)
