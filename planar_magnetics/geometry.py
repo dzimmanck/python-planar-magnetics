@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import Union
+from pathlib import Path
 from dataclasses import dataclass, field
 import math
 import uuid
@@ -249,10 +251,28 @@ class Polygon:
             points.append((point.x, point.y))
         return points
 
-    def add_to_dxf_model(self, modelspace):
+    def export_to_dxf(
+        self,
+        filename: Union[str, Path],
+        version: str = "R2000",
+        encoding: str = None,
+        fmt: str = "asc",
+    ) -> None:
+        """Export the polygon to a dxf file
 
-        for point in self.points:
-            point.add_to_dxf_model(modelspace)
+        Args:
+            filename: file name as string
+            version: DXF version
+            encoding: override default encoding as Python encoding string like ``'utf-8'``
+            fmt: ``'asc'`` for ASCII DXF (default) or ``'bin'`` for Binary DXF
+        """
+        import ezdxf
+
+        doc = ezdxf.new(version)
+        msp = doc.modelspace()
+        path = self.to_poly_path()
+        mpolygon = msp.add_lwpolyline(path, close=True)
+        doc.saveas(filename, encoding, fmt)
 
     def plot(self, max_angle: float = math.pi / 36):
         """Create a plot preview of the polygon

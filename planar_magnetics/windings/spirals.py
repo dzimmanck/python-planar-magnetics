@@ -1,5 +1,6 @@
 import math
-
+from typing import Union
+from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import round_corner, smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
@@ -94,6 +95,24 @@ class Spiral:
     def plot(self, max_angle: float = math.pi / 36):
         self.polygon.plot(max_angle)
 
+    def export_to_dxf(
+        self,
+        filename: Union[str, Path],
+        version: str = "R2000",
+        encoding: str = None,
+        fmt: str = "asc",
+    ) -> None:
+        """Export the polygon to a dxf file
+
+        Args:
+            filename: file name as string
+            version: DXF version
+            encoding: override default encoding as Python encoding string like ``'utf-8'``
+            fmt: ``'asc'`` for ASCII DXF (default) or ``'bin'`` for Binary DXF
+        """
+
+        self.polygon.export_to_dxf(filename, version, encoding, fmt)
+
     def __str__(self):
         return self.polygon.__str__()
 
@@ -120,10 +139,4 @@ if __name__ == "__main__":
     print(f"Estimated DCR of this spiral is {resistance*1e3} mOhms")
 
     # export to dxf
-    import ezdxf
-
-    doc = ezdxf.new("R2000")
-    msp = doc.modelspace()
-    path = spiral.polygon.to_poly_path()
-    mpolygon = msp.add_lwpolyline(path, close=True)
-    doc.saveas("test_true_arc.dxf")
+    spiral.export_to_dxf("test.dxf")
