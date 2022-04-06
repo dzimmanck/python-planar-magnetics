@@ -128,16 +128,21 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=5,
+        num_turns=3,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
     )
 
-    # estimate the resistance of the spiral
-    thickness = weight_to_thickness(4)
-    resistance = spiral.estimate_dcr(thickness)
-    print(f"Estimated DCR of this spiral is {resistance*1e3} mOhms")
+    # estimate the dc resistance of this spiral assuming 2 oz copper
+    dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
+    print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
 
-    # export to dxf
-    spiral.export_to_dxf("test.dxf")
+    # dispay a preview of the spiral from Python using matplotlib
+    spiral.plot()
+
+    # export this to a DXF file
+    spiral.export_to_dxf("spiral.dxf")
+
+    # get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
+    print(spiral)
