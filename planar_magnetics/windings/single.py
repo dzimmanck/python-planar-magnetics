@@ -20,6 +20,8 @@ class TopTurn:
         layer: str,
     ):
 
+        self.inner_radius = inner_radius
+        self.outer_radius = outer_radius
         self.layer = layer
 
         # calculate the gap angles
@@ -82,7 +84,7 @@ class TopTurn:
         )
 
         # TODO:  Need to add via resistance
-        return total_resistance
+        return turn_resistance
 
     def __str__(self):
 
@@ -105,6 +107,8 @@ class BottomTurn:
         layer: str,
     ):
 
+        self.inner_radius = inner_radius
+        self.outer_radius = outer_radius
         self.layer = layer
 
         # calculate the gap angles
@@ -167,7 +171,7 @@ class BottomTurn:
         )
 
         # TODO:  Need to add via resistance
-        return total_resistance
+        return turn_resistance
 
     def __str__(self):
 
@@ -193,6 +197,8 @@ class InnerTurn:
             outer_radius > inner_radius
         ), "outer radius must be greater than inner radius"
 
+        self.inner_radius = inner_radius
+        self.outer_radius = outer_radius
         self.layer = layer
 
         # calculate the gap angles
@@ -249,7 +255,7 @@ class InnerTurn:
         )
 
         # TODO:  Need to add via resistance
-        return total_resistance
+        return turn_resistance
 
     def __str__(self):
         return self.polygon.__str__()

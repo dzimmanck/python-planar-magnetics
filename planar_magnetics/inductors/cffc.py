@@ -13,11 +13,13 @@ class Winding:
         at: Point,
         inner_radius: float,
         outer_radius: float,
-        number_turns: int,
+        number_layers: int,
         gap: float = 0.5e-3,
         termination_width: float = None,
         viastrip_width: float = 1e-3,
     ):
+
+        self.number_layers = number_layers
 
         if termination_width is None:
             termination_width = outer_radius - inner_radius
@@ -29,9 +31,9 @@ class Winding:
         # calculate the angle we can allocate to the via transitions
         circumfrance_for_transitions = (
             2 * math.pi - term_angle
-        ) * inner_radius - number_turns * gap
+        ) * inner_radius - number_layers * gap
         angle_for_transitions = circumfrance_for_transitions / inner_radius
-        viastrip_angle = angle_for_transitions / (number_turns - 1)
+        viastrip_angle = angle_for_transitions / (number_layers - 1)
 
         # calculate other useful angles
         inner_gap_angle = math.asin(gap / inner_radius)
@@ -63,7 +65,7 @@ class Winding:
                 viastrip_width,
                 f"In{n}.Cu",
             )
-            for n in range(1, number_turns - 1)
+            for n in range(1, number_layers - 1)
         ]
         bottom = BottomTurn(
             at,
@@ -92,25 +94,32 @@ class Winding:
                 0.8e-3,
                 0.4e-3,
             )
-            for n in range(number_turns - 1)
+            for n in range(number_layers - 1)
         ]
 
-    def estimate_dcr(self, stackup: [float], temperature: float = 25):
+    def estimate_dcr(self, thicknesses: [float], rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
         dc resistance of each turn and adding the estimated inter-turn via resistance 
         
         Args:
-            stackup: list of copper weights for each layer in ounces
-            temperature: winding temperature in decrees C
+            thicknesses: The thickness of each layer in the winding
+            rho (float): The conductivity of the material used in the layer
 
         Returns:
             float: An estimation of the DC resistance in ohms
         """
 
-        # TODO
-        raise NotImplementedError
+        assert (
+            len(thicknesses) == self.number_layers
+        ), f"You need to specify 1 thickness for each layer, so len(thicknesses) should be {self.number_layers}, not{len(thicknesses)}"
+
+        resistance = 0
+        for thickness, turn in zip(thicknesses, self.turns):
+            resistance += turn.estimate_dcr(thickness, rho)
+
+        return resistance
 
     def __str__(self):
         turns = "\n".join(turn.__str__() for turn in self.turns)
@@ -138,12 +147,15 @@ class Cffc:
 
         self.termination_width = outer_radius - inner_radius
 
+        self.number_turns = number_turns
+        self.number_layers = number_turns + 1
+
         # create the windings
         self.winding = Winding(
             at=origin,
             inner_radius=inner_radius,
             outer_radius=outer_radius,
-            number_turns=number_turns,
+            number_layers=self.number_layers,
             gap=creapage,
             termination_width=self.termination_width,
         )
@@ -161,6 +173,22 @@ class Cffc:
     def __str__(self):
         expression = self.winding.__str__() + self.core.__str__()
         return expression
+
+    def estimate_dcr(self, thicknesses: [float], rho: float = 1.68e-8):
+        """Estimate the DC resistance of the winding
+
+        This function will estimate the DC resistance of the winding by calculating the estimated
+        dc resistance of each turn and adding the estimated inter-turn via resistance 
+        
+        Args:
+            thicknesses: The thickness of each layer in the winding
+            rho (float): The conductivity of the material used in the layer
+
+        Returns:
+            float: An estimation of the DC resistance in ohms
+        """
+
+        return self.winding.estimate_dcr(thicknesses, rho)
 
     def to_kicad_footprint(self, name: str):
         """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)
@@ -202,6 +230,23 @@ class Cffc:
 
 if __name__ == "__main__":
 
-    inductor = Cffc(inner_radius=4.9e-3, outer_radius=9e-3, number_turns=6, voltage=500)
+    from planar_magnetics.utils import weight_to_thickness
 
-    inductor.to_kicad_footprint("Cffc_Inductor_03")
+    inductor = Cffc(inner_radius=4.9e-3, outer_radius=9e-3, number_turns=5, voltage=500)
+
+    # estimate the dc resistance of this inductor
+    # using the CFFC structure, a 5 turn inductor requires 6 layers
+    # assume we are using 1.5 oz on top/botton and 2oz on interior layers
+    thicknesses = [
+        weight_to_thickness(1.5),
+        weight_to_thickness(2),
+        weight_to_thickness(2),
+        weight_to_thickness(2),
+        weight_to_thickness(2),
+        weight_to_thickness(1.5),
+    ]
+    dcr = inductor.estimate_dcr(thicknesses)
+    print(f"Estimated DCR of this inductor is {dcr*1e3} mOhms")
+
+    # create a complete KiCAD footprint
+    inductor.to_kicad_footprint("cffc_inductor")
