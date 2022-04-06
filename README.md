@@ -2,29 +2,41 @@
 Programmaticaly create HF planar inductors and transformers.
 
 # Background
-The workflow for developing planar magnetics can be very inefficient and frustrating.  Power electronics engineers either struggle to draw planar windings directly in CAD, or if they are lucky enough to have a mechanical engineer to work with give hand drawings that get converted into DXF files and they imported into CAD, where they then fail DRC requireing changes.  `python-planar-magnetics` seeks to provide an much more efficient developer experience by generating optimized geometric structures for planar magnetics programmatically and then exporting these structures either to S-expressions (KiCAD) or DXF files (All other PCB CAD tools).
+The workflow for developing planar magnetics can be very inefficient and frustrating.  Power electronics engineers either struggle to draw planar windings directly in CAD or struggle with the inefficient design -> mechanical cad -> electrical cad -> dcr -> redesign flow.  `python-planar-magnetics` seeks to provide an much more efficient developer experience by generating optimized geometric structures for planar magnetics programmatically and then exporting these structures either to S-expressions (KiCAD) or DXF files (All other PCB CAD tools).  The library allows you to define planar structures the follow DRC guidlines programmatically and estimate DCR and preview shapes without ever optning a CAD tool.
 
-# Example Usage
+# Basic Structure
+The library allows both generation of planar magnetic 2-D elements (core cutouts, spirals, single turns) as well as complete components (inductors, transformers).  This offers two distinct types of user experiences.  If the user wants to create a complex design with several custom or unanticipated features such as a unique core geometry or a different layer interconnection strategy, then they can use this library to generate the base structures, import into their favorite CAD tool, and then manually modify or augment in any way they see fit.  If they simple want a complete planar inductor or transformer designed by this library, they can use the inductor and transformer modules to programatically create a complete part which can then be exported as a KiCAD footprint file or a collection of DXF files for each layer that can then be imported and stiched back together in CAD.
+
+## Example: Creating a spiral
 
 ```python
-from planar_magnetics.utils import calculate_creepage, PollutionDegree
+from planar_magnetics.creepage import calculate_creepage
+from planar_magnetics.utils import weight_to_thickness
 
 # create a spiral inductor
-spiral = Spiral(
-    at=Point(110e-3, 110e-3),
-    inner_radius=10e-3,
-    outer_radius=15e-3,
-    num_turns=4,
-    gap=calculate_creepage(
-        500 / 4, PollutionDegree.Two
-    ),  # creepage per turn for spiral that needs to withstand 500V
-    layer="F.Cu",
-)
+    spiral = Spiral(
+        at=Point(110e-3, 110e-3),
+        inner_radius=6e-3,
+        outer_radius=12e-3,
+        num_turns=3,
+        gap=calculate_creepage(500, 1),
+        layer="F.Cu",
+        radius=0.3e-3,
+    )
 
-# get the KiCad S expression to PCB footprint
-print(spiral)
+    # estimate the dc resistance of this spiral assuming 2 oz copper
+    dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
+    print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
+
+    # dispay a preview of the spiral from Python using matplotlib
+    spiral.plot()
+
+    # export this to a DXF file
+    spiral.export_to_dxf("spiral.dxf")
+
+    # get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
+    print(spiral)
 ```
-Which generates a KiCAD s-expression for the following geometry.
 
 <img src="images/4turn_spiral.png" alt="4 turn spiral" style="width:400px;"/>
 
