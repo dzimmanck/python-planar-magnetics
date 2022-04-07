@@ -1,4 +1,3 @@
-import numpy as np
 import math
 from planar_magnetics.geometry import Point, get_distance
 
