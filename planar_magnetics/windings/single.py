@@ -1,6 +1,6 @@
 import math
-import uuid
-from planar_magnetics.geometry import Arc, Point, Polygon, Via
+from planar_magnetics.geometry import Arc, Point, Polygon
+from planar_magnetics.kicad import Via
 from planar_magnetics.utils import dcr_of_annulus
 
 

@@ -4,8 +4,6 @@ from pathlib import Path
 from dataclasses import dataclass, field
 import math
 import uuid
-import ezdxf
-from planar_magnetics.kicad import Pad, PadType
 
 # useful geometric constants
 TWO_PI = 2 * math.pi
@@ -62,26 +60,6 @@ class Point:
 
     def __ne__(self, other: Point) -> bool:
         return not self.__eq__(other)
-
-
-@dataclass
-class Via:
-    at: float = 0.0
-    size: float = 0.8
-    drill: float = 0.4
-    layers: (str) = ("F.Cu",)
-    remove_unused_layers = True
-    tstamp: uuid.UUID = uuid.uuid4()
-
-    def to_pad(self, number: int = 1):
-        """Convert to an equivalent through-hole pad"""
-
-        return Pad(PadType.TH, number, self.at, self.size, ("*.Cu",), self.drill)
-
-    def __str__(self):
-        layers = " ".join(self.layers)
-        annular_option = "(remove_unused_layers)" if self.remove_unused_layers else ""
-        return f"(via (at {self.at}) (size {self.size*1e3}) (drill {self.drill*1e3}) (layers {layers}) {annular_option} (free) (net 0) (tstamp {self.tstamp}))"
 
 
 def point_from_polar(radius, angle):
@@ -271,7 +249,7 @@ class Polygon:
         doc = ezdxf.new(version)
         msp = doc.modelspace()
         path = self.to_poly_path()
-        mpolygon = msp.add_lwpolyline(path, close=True)
+        msp.add_lwpolyline(path, close=True)
         doc.saveas(filename, encoding, fmt)
 
     def plot(self, max_angle: float = math.pi / 36):

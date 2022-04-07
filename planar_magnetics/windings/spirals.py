@@ -2,7 +2,7 @@ import math
 from typing import Union
 from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point
-from planar_magnetics.smoothing import round_corner, smooth_polygon
+from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
 
 

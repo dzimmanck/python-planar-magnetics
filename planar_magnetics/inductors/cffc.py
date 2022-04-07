@@ -1,6 +1,5 @@
 import math
-import uuid
-from planar_magnetics.geometry import Arc, Point, Polygon, Via
+from planar_magnetics.geometry import Point
 from planar_magnetics.cores import Core
 from planar_magnetics.creepage import Classification, calculate_creepage
 from planar_magnetics.kicad import Footprint, Pad, PadType, Reference, Value
@@ -215,8 +214,8 @@ class Cffc:
         font_size = min(2e-3, height_avail / 4)
         val_loc = Point(x_loc, self.termination_width / 2 + height_avail / 3)
         ref_loc = Point(x_loc, self.termination_width / 2 + 2 * height_avail / 3)
-        reference = Reference(ref_loc)
-        value = Value(val_loc)
+        reference = Reference(ref_loc, font_size)
+        value = Value(val_loc, font_size)
 
         # create a footprint from the various elements
         contents = [self.core] + self.winding.turns + pads + [reference, value]

@@ -6,7 +6,6 @@ from planar_magnetics.geometry import (
     Polygon,
     TWO_PI,
     PI_OVER_TWO,
-    THREE_PI_OVER_TWO,
 )
 
 

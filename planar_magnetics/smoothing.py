@@ -1,7 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
 import math
-import uuid
 
 from planar_magnetics.geometry import (
     Point,
