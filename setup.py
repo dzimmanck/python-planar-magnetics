@@ -16,8 +16,9 @@ setuptools.setup(
         "Bug Tracker": "https://github.com/dzimmanck/python-planar-magnetics/issues",
     },
     classifiers=[
+        "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
-        "License :: Apache 2.0",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=setuptools.find_packages(),
