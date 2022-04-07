@@ -182,16 +182,3 @@ def smooth_polygon(polygon: Polygon, radius: float) -> Polygon:
     arcs.extend(round_corner(arcs.pop(), arcs.pop(0), radius))
 
     return Polygon(arcs, polygon.layer, polygon.width, polygon.fill)
-
-
-if __name__ == "__main__":
-    # arc0 = Arc(
-    #     Point(110.0e-3, 110.0e-3),
-    #     0.011997448713915889,
-    #     3.141592653589793,
-    #     -2.519520609753873,
-    # )
-    # arc1 = Arc(Point(110.0e-3, 110.0e-3), 0.01, -2.9175173682879736, 3.141592653589793)
-
-    # corner = smooth_point_to_arc(arc0.end, arc1, radius=0.5e-3)
-    # print(corner)

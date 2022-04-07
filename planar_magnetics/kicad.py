@@ -81,7 +81,3 @@ class Footprint:
         expression = f"({header} {contents})"
 
         return expression
-
-
-if __name__ == "__main__":
-    from planar_magnetics.geometry import Point
