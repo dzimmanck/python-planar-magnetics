@@ -13,6 +13,7 @@ The library allows both generation of planar magnetic 2-D elements (core cutouts
 from planar_magnetics.creepage import calculate_creepage
 from planar_magnetics.utils import weight_to_thickness
 from planar_magnetics.windings import Spiral
+from planar_magnetics.geometry import Point
 
 # create a spiral inductor
 spiral = Spiral(
@@ -49,7 +50,6 @@ Currently, the library only supports creation of a [Compensating Fringing Field 
 
 ```python
 from planar_magnetics.inductors import Cffc
-from planar_magnetics.utils import weight_to_thickness
 from planar_magnetics.utils import weight_to_thickness
 
 # create an inductor using the CFFC technique
