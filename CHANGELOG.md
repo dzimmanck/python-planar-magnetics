@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+## [v0.1.1]
+
+* Fix classifiers for PyPi release
 
 ## [v0.1.0]
 
