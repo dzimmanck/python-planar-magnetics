@@ -119,7 +119,7 @@ class Arc:
         return f"(arc (start {self.start}) (mid {self.mid}) (end {self.end}))"
 
     def __add__(self, other: Point):
-        return Arc(selt.at + other, self.radius, self.start_angle, self.end_angle)
+        return Arc(self.at + other, self.radius, self.start_angle, self.end_angle)
 
     def rotates_clockwise(self):
         return self.end_angle < self.start_angle

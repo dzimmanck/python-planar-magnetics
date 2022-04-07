@@ -85,9 +85,3 @@ class Footprint:
 
 if __name__ == "__main__":
     from planar_magnetics.geometry import Point
-
-    pad1 = ThroughHolePad(1, Point(0, 0), 0.8e-3, 0.4e-3)
-    pad2 = ThroughHolePad(2, Point(2e-3, 2e-3), 0.8e-3, 0.4e-3)
-    footprint = Footprint("test", contents=[pad1, pad2])
-
-    print(footprint)

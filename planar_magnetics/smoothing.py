@@ -195,8 +195,3 @@ if __name__ == "__main__":
 
     # corner = smooth_point_to_arc(arc0.end, arc1, radius=0.5e-3)
     # print(corner)
-
-    p0 = Point(0.2, 0)
-    p1 = Point(0, 0)
-    p2 = Point(-1, -1)
-    print(get_oriented_distance(p0, p1, p2))
