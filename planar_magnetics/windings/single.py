@@ -296,3 +296,8 @@ class ViaStrip:
     def __str__(self):
         expression = "\n".join([via.__str__() for via in self.vias])
         return expression
+
+
+if __name__ == "__main__":
+    turn = InnerTurn(Point(0, 0), 6e-3, 12e-3, 0.5e-3, 0, math.pi / 8, 0, "F.Cu")
+    print(turn)

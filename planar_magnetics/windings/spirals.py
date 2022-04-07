@@ -69,7 +69,8 @@ class Spiral:
 
         self.polygon = polygon
 
-        self.radii = radii
+        self.inner_radii = radii
+        self.outer_radii = [r - gap for r in radii[1:]] + [outer_radius]
 
     def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
@@ -87,7 +88,7 @@ class Spiral:
 
         # sum the resistance of each turn
         resistance = 0
-        for r0, r1 in zip(self.radii[0:-1], self.radii[1:]):
+        for r0, r1 in zip(self.inner_radii, self.outer_radii):
             resistance += dcr_of_annulus(thickness, r0, r1, rho)
 
         return resistance
@@ -128,7 +129,7 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=3,
+        num_turns=1,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
@@ -141,8 +142,8 @@ if __name__ == "__main__":
     # dispay a preview of the spiral from Python using matplotlib
     spiral.plot()
 
-    # export this to a DXF file
-    spiral.export_to_dxf("spiral.dxf")
+    # # export this to a DXF file
+    # spiral.export_to_dxf("spiral.dxf")
 
     # get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
     print(spiral)
