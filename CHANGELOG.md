@@ -5,16 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
 ## [Unreleased]
 
 ### Fixed
+
+- Fix error in spiral DC resistance calculation that was omitting the last turn ([issue-10](https://github.com/dzimmanck/python-planar-magnetics/issues/10))
 
 ### Added
 
 ## [v0.1.1]
 
-* Fix classifiers for PyPi release
+- Fix classifiers for PyPi release
 
 ## [v0.1.0]
 
-* Initial release
+- Initial release
