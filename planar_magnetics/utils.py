@@ -29,6 +29,10 @@ def dcr_of_annulus(
     """Calculate the sheet resistance of an annulus
     """
 
+    assert (
+        outer_radius > inner_radius
+    ), f"Outer radius must be greater than inner radius"
+
     resistance = (2 * math.pi * rho) / (
         thickness * (math.log(outer_radius / inner_radius))
     )
