@@ -41,7 +41,7 @@ print(spiral)
 
 Preview (Matplotlib)       |  KiCAD                    |  DXF
 :-------------------------:|:-------------------------:|:--------------------------:
-![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_matplotlib.png)  |  ![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_kicad.png)  |  ![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_dxf.png)
+![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_matplotlib.png?raw=True)  |  ![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_kicad.png?raw=True)  |  ![](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/3turn_spiral_dxf.png?raw=True)
 
 ## Example: Creating a complete inductor
 
@@ -73,4 +73,4 @@ print(f"Estimated DCR of this inductor is {dcr*1e3} mOhms")
 inductor.to_kicad_footprint("cffc_inductor")
 ```
 
-![KiCAD Footprint](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/cffc_kicad_footprint.png)
+![KiCAD Footprint](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/cffc_kicad_footprint.png?raw=True)
