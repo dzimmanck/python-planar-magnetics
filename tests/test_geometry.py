@@ -1,5 +1,5 @@
 import math
-from planar_magnetics.geometry import Point, get_distance
+from ..geometry import Point, get_distance
 
 
 def test_get_distance():
