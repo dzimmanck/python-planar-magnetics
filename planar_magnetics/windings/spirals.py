@@ -69,7 +69,8 @@ class Spiral:
 
         self.polygon = polygon
 
-        self.radii = radii
+        self.inner_radii = radii
+        self.outer_radii = [r - gap for r in radii[1:]] + [outer_radius]
 
     def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
@@ -87,7 +88,7 @@ class Spiral:
 
         # sum the resistance of each turn
         resistance = 0
-        for r0, r1 in zip(self.radii[0:-1], self.radii[1:]):
+        for r0, r1 in zip(self.inner_radii, self.outer_radii):
             resistance += dcr_of_annulus(thickness, r0, r1, rho)
 
         return resistance
