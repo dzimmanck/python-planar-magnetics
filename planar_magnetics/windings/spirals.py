@@ -28,27 +28,34 @@ class Spiral:
         at: Point,
         inner_radius: float,
         outer_radius: float,
-        num_turns: int,
+        num_turns: float,
         gap: float,
         layer: str = "F.Cu",
         radius: float = 0.1e-3,
     ):
+        assert num_turns >= 1, "A spiral must have at least 1 turn"
 
-        radii = calculate_trace_widths(inner_radius, outer_radius, num_turns)
+        # unpack the turns into the integer part and fractional part
+        integer_turns, fractional_turns = divmod(num_turns, 1)
+        integer_turns = int(integer_turns)
 
-        # verify that the minimum trace width is greater than 2 x min radius
-        min_trace_width = (
-            radii[1] - radii[0] - gap if num_turns > 1 else outer_radius - inner_radius
-        )
-        assert (
-            min_trace_width > 2 * radius
-        ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
+        radii = calculate_trace_widths(inner_radius, outer_radius, integer_turns)
 
-        # create the arcs for the inner turns
+        # # verify that the minimum trace width is greater than 2 x min radius
+        # min_trace_width = (
+        #     radii[1] - radii[0] - gap if num_turns > 1 else outer_radius - inner_radius
+        # )
+        # assert (
+        #     min_trace_width > 2 * radius
+        # ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
+
+        # create the initial arc
         angle = math.acos(1 - gap / radii[0])
         arcs = [Arc(at, radii[0], -math.pi + angle, math.pi)]
+
+        # create the arcs for the inner turns
         for r0, r1 in zip(radii[0:-1], radii[1:]):
-            angle = math.acos(gap / r1 + r0 * (1 - gap / r0) / r1)
+            angle = math.acos(r0 / r1)
             arc = Arc(at, r1, -math.pi + angle, math.pi)
             arcs.append(arc)
 
@@ -134,7 +141,7 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=1,
+        num_turns=5,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
