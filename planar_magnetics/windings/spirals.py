@@ -5,6 +5,19 @@ from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
 
+# calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
+# Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
+# Industrial DC/DC Converter Module
+# https://www.pes-publications.ee.ethz.ch/uploads/tx_ethpublications/7_electronics-10-02158_FINAL_Knabben.pdf
+def calculate_trace_widths(inner_radius, outer_radius, num_turns):
+    inverse_num_turns = 1 / num_turns
+    radii = [
+        (inner_radius ** (num_turns - i) * outer_radius ** i) ** inverse_num_turns
+        for i in range(num_turns)
+    ]
+
+    return radii
+
 
 class Spiral:
     """Create an optimized spiral multi-turn winding on a single layer
@@ -21,15 +34,7 @@ class Spiral:
         radius: float = 0.1e-3,
     ):
 
-        # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
-        # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
-        # Industrial DC/DC Converter Module
-        # https://www.pes-publications.ee.ethz.ch/uploads/tx_ethpublications/7_electronics-10-02158_FINAL_Knabben.pdf
-        inverse_num_turns = 1 / num_turns
-        radii = [
-            (inner_radius ** (num_turns - i) * outer_radius ** i) ** inverse_num_turns
-            for i in range(num_turns)
-        ]
+        radii = calculate_trace_widths(inner_radius, outer_radius, num_turns)
 
         # verify that the minimum trace width is greater than 2 x min radius
         min_trace_width = (
@@ -135,15 +140,15 @@ if __name__ == "__main__":
         radius=0.3e-3,
     )
 
-    # estimate the dc resistance of this spiral assuming 2 oz copper
-    dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
-    print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
+    # # estimate the dc resistance of this spiral assuming 2 oz copper
+    # dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
+    # print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
 
     # dispay a preview of the spiral from Python using matplotlib
     spiral.plot()
 
-    # # export this to a DXF file
-    # spiral.export_to_dxf("spiral.dxf")
+    # # # export this to a DXF file
+    # # spiral.export_to_dxf("spiral.dxf")
 
-    # get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
-    print(spiral)
+    # # get the KiCad S expression, which can be then be copy-pasted into a KiCAD footprint file and edited from the footprint editer
+    # print(spiral)
