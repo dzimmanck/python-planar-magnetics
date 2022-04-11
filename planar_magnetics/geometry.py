@@ -252,7 +252,7 @@ class Polygon:
         msp.add_lwpolyline(path, close=True)
         doc.saveas(filename, encoding, fmt)
 
-    def plot(self, max_angle: float = math.pi / 36):
+    def plot(self, max_angle: float = math.pi / 36, fill=True):
         """Create a plot preview of the polygon
         """
         import matplotlib.pyplot as mp
@@ -261,7 +261,10 @@ class Polygon:
         mp.figure(figsize=(8, 8))
         mp.axis("equal")
         x, y = zip(*path)
-        mp.fill(x, y)
+        if fill:
+            mp.fill(x, y)
+        else:
+            mp.plot(x, y)
         mp.show()
 
 
