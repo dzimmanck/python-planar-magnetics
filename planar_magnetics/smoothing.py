@@ -132,10 +132,22 @@ def round_corner(arc1: Arc, arc2: Arc, radius: float):
     else:
         # otherwise we add a smoothing corner
         corner = smooth_point_to_arc(arc2.start, arc1.reverse(), radius).reverse()
+
+        end_angle = corner.start_angle
+
+        # correct rotation
+        if arc1.rotates_clockwise():
+            while end_angle > arc1.start_angle:
+                end_angle -= TWO_PI
+        else:
+            while end_angle < arc1.start_angle:
+                end_angle += TWO_PI
+
         arcs = [
-            Arc(arc1.center, arc1.radius, arc1.start_angle, corner.start_angle),
+            Arc(arc1.center, arc1.radius, arc1.start_angle, end_angle),
             corner,
         ]
+
     # check if the transition to the start of arc2 is continuous
     if math.isclose(arc2.radius, get_distance(arc2.center, arc1.end, arc2.start)):
         # if so, we just add the original arc
