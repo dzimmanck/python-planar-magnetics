@@ -56,13 +56,17 @@ class Spiral:
         # calculate the over-rotation angle
         rotation_angle = -math.pi + TWO_PI * fractional_turns
 
-        # create the initial arc
-        angle = math.acos(1 - gap / inner_radius)
-        arcs = [Arc(at, inner_radius, -math.pi + angle, math.pi)]
-
         # create the arcs for the inner turns
-        i = 0
-        while True:
+        r0 = inner_radius - gap
+        a0 = -math.pi
+        arcs = []
+        for i in range(integer_turns):
+            # wide section
+            r1 = wide_radii[i]
+            angle = math.acos(r0 / r1)
+            arc = Arc(at, r1, a0 + angle, math.pi)
+            arcs.append(arc)
+
             # narrow section
             r0 = wide_radii[i]
             r1 = narrow_radii[i + 1]
@@ -70,17 +74,30 @@ class Spiral:
             arc = Arc(at, r1, -math.pi + angle, rotation_angle)
             arcs.append(arc)
 
-            # wide section
-            try:
-                r0 = r1
-                r1 = wide_radii[i + 1]
-                angle = math.acos(r0 / r1)
-                arc = Arc(at, r1, rotation_angle + angle, math.pi)
-                arcs.append(arc)
-            except IndexError:
-                break
+            # update r0 and a0 for next turn
+            r0 = r1
+            a0 = rotation_angle
 
-            i += 1
+        # i = 0
+        # while True:
+        #     # narrow section
+        #     r0 = wide_radii[i]
+        #     r1 = narrow_radii[i + 1]
+        #     angle = math.acos(r0 / r1)
+        #     arc = Arc(at, r1, -math.pi + angle, rotation_angle)
+        #     arcs.append(arc)
+
+        #     # wide section
+        #     try:
+        #         r0 = r1
+        #         r1 = wide_radii[i + 1]
+        #         angle = math.acos(r0 / r1)
+        #         arc = Arc(at, r1, rotation_angle + angle, math.pi)
+        #         arcs.append(arc)
+        #     except IndexError:
+        #         break
+
+        #     i += 1
 
         # create the outermost arc
         a0 = math.acos(narrow_radii[-1] / outer_radius)
