@@ -72,7 +72,7 @@ class Spiral:
 
             # wide section
             try:
-                r0 = narrow_radii[i + 1]
+                r0 = r1
                 r1 = wide_radii[i + 1]
                 angle = math.acos(r0 / r1)
                 arc = Arc(at, r1, rotation_angle + angle, math.pi)
@@ -99,8 +99,8 @@ class Spiral:
 
             # wide section
             try:
+                r1 = r0
                 r0 = narrow_radii[i - 1] - gap
-                r1 = wide_radii[i] - gap
                 angle = math.acos(r0 / r1)
                 arc = Arc(at, r1, math.pi, rotation_angle + angle)
                 arcs.append(arc)
@@ -115,7 +115,6 @@ class Spiral:
         if radius > 0:
             polygon = smooth_polygon(polygon, radius)
 
-        polygon.plot(fill=False)
         self.polygon = polygon
 
         # self.wide_radii = wide_radii
@@ -179,10 +178,10 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=2.5,
+        num_turns=2.4,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
-        radius=0.3e-3,
+        radius=0,
     )
 
     # # estimate the dc resistance of this spiral assuming 2 oz copper
