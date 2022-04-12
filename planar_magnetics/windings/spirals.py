@@ -1,7 +1,7 @@
 import math
 from typing import Union
 from pathlib import Path
-from planar_magnetics.geometry import Arc, Polygon, Point, TWO_PI
+from planar_magnetics.geometry import Arc, Polygon, Point, TWO_PI, PI_OVER_TWO
 from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
 
@@ -68,11 +68,19 @@ class Spiral:
             arcs.append(arc)
 
             # narrow section
-            r0 = wide_radii[i]
+            r0 = r1
             r1 = narrow_radii[i + 1]
-            angle = math.acos(r0 / r1)
-            arc = Arc(at, r1, -math.pi + angle, rotation_angle)
-            arcs.append(arc)
+            angle = math.acos(r0 / r1) - math.pi
+            arc = Arc(at, r1, angle, rotation_angle)
+            if angle > rotation_angle:  # the linear sections of the spiral overlap
+                x = -r0
+                y = -x * math.tan(rotation_angle + PI_OVER_TWO)
+                point = Point(x, y) + at
+                print()
+                arcs.append(point)
+                # arcs.append(arc.start)
+            else:
+                arcs.append(arc)
 
             # update r0 and a0 for next turn
             r0 = r1
@@ -91,14 +99,18 @@ class Spiral:
             # narrow section
             r0 = wide_radii[i - 1] - gap
             r1 = narrow_radii[i] - gap
-            angle = math.acos(r0 / r1)
-            arc = Arc(at, r1, rotation_angle, -math.pi + angle)
-            arcs.append(arc)
+            angle = math.acos(r0 / r1) - math.pi
+            arc = Arc(at, r1, rotation_angle, angle)
+            if angle > rotation_angle:
+                arcs.append(arc.end)
+            else:
+                arcs.append(arc)
 
             # update for the next turn
             r1 = r0
             a0 = math.pi
 
+        Polygon(arcs).plot(fill=False)
         polygon = Polygon(arcs, layer)
 
         # Add smoothing if a positive radius is provided
@@ -179,7 +191,7 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=2.4,
+        num_turns=2.48,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0,
