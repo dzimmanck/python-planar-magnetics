@@ -56,7 +56,7 @@ class Spiral:
         # calculate the over-rotation angle
         rotation_angle = -math.pi + TWO_PI * fractional_turns
 
-        # create the arcs for the inner turns
+        # create the inner arcs
         r0 = inner_radius - gap
         a0 = -math.pi
         arcs = []
@@ -78,53 +78,26 @@ class Spiral:
             r0 = r1
             a0 = rotation_angle
 
-        # i = 0
-        # while True:
-        #     # narrow section
-        #     r0 = wide_radii[i]
-        #     r1 = narrow_radii[i + 1]
-        #     angle = math.acos(r0 / r1)
-        #     arc = Arc(at, r1, -math.pi + angle, rotation_angle)
-        #     arcs.append(arc)
+        # create the outer arcs
+        r1 = outer_radius
+        a0 = rotation_angle + math.acos(narrow_radii[-1] / outer_radius) + TWO_PI
+        for i in range(integer_turns, 0, -1):
+            # wide section
+            r0 = narrow_radii[i] - gap
+            angle = math.acos(r0 / r1)
+            arc = Arc(at, r1, a0, rotation_angle + angle)
+            arcs.append(arc)
 
-        #     # wide section
-        #     try:
-        #         r0 = r1
-        #         r1 = wide_radii[i + 1]
-        #         angle = math.acos(r0 / r1)
-        #         arc = Arc(at, r1, rotation_angle + angle, math.pi)
-        #         arcs.append(arc)
-        #     except IndexError:
-        #         break
-
-        #     i += 1
-
-        # create the outermost arc
-        a0 = math.acos(narrow_radii[-1] / outer_radius)
-        a1 = math.acos((narrow_radii[-1] - gap) / outer_radius)
-        arc = Arc(at, outer_radius, rotation_angle + a0, rotation_angle + a1 - TWO_PI)
-        arcs.append(arc)
-
-        i = -1
-        while True:
             # narrow section
-            r0 = wide_radii[i] - gap
+            r0 = wide_radii[i - 1] - gap
             r1 = narrow_radii[i] - gap
             angle = math.acos(r0 / r1)
             arc = Arc(at, r1, rotation_angle, -math.pi + angle)
             arcs.append(arc)
 
-            # wide section
-            try:
-                r1 = r0
-                r0 = narrow_radii[i - 1] - gap
-                angle = math.acos(r0 / r1)
-                arc = Arc(at, r1, math.pi, rotation_angle + angle)
-                arcs.append(arc)
-            except ValueError:
-                break
-
-            i -= 1
+            # update for the next turn
+            r1 = r0
+            a0 = math.pi
 
         polygon = Polygon(arcs, layer)
 
