@@ -1,7 +1,7 @@
 import math
 from typing import Union
 from pathlib import Path
-from planar_magnetics.geometry import Arc, Polygon, Point
+from planar_magnetics.geometry import Arc, Polygon, Point, TWO_PI
 from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
 
@@ -9,7 +9,7 @@ from planar_magnetics.utils import dcr_of_annulus
 # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
 # Industrial DC/DC Converter Module
 # https://www.pes-publications.ee.ethz.ch/uploads/tx_ethpublications/7_electronics-10-02158_FINAL_Knabben.pdf
-def calculate_trace_widths(inner_radius, outer_radius, num_turns):
+def calc_trace_widths(inner_radius, outer_radius, num_turns):
     inverse_num_turns = 1 / num_turns
     radii = [
         (inner_radius ** (num_turns - i) * outer_radius ** i) ** inverse_num_turns
@@ -39,39 +39,75 @@ class Spiral:
         integer_turns, fractional_turns = divmod(num_turns, 1)
         integer_turns = int(integer_turns)
 
-        radii = calculate_trace_widths(inner_radius, outer_radius, integer_turns)
+        # calculate the radii widths of each section
+        wide_radii = calc_trace_widths(inner_radius, outer_radius, integer_turns)
+        narrow_radii = calc_trace_widths(inner_radius, outer_radius, integer_turns + 1)
 
-        # # verify that the minimum trace width is greater than 2 x min radius
-        # min_trace_width = (
-        #     radii[1] - radii[0] - gap if num_turns > 1 else outer_radius - inner_radius
-        # )
-        # assert (
-        #     min_trace_width > 2 * radius
-        # ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
+        # verify that the minimum trace width is greater than 2 x min radius
+        min_trace_width = (
+            narrow_radii[1] - narrow_radii[0] - gap
+            if num_turns > 1
+            else outer_radius - inner_radius
+        )
+        assert (
+            min_trace_width > 2 * radius
+        ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
+
+        # calculate the over-rotation angle
+        rotation_angle = -math.pi + TWO_PI * fractional_turns
 
         # create the initial arc
-        angle = math.acos(1 - gap / radii[0])
-        arcs = [Arc(at, radii[0], -math.pi + angle, math.pi)]
+        angle = math.acos(1 - gap / inner_radius)
+        arcs = [Arc(at, inner_radius, -math.pi + angle, math.pi)]
 
         # create the arcs for the inner turns
-        for r0, r1 in zip(radii[0:-1], radii[1:]):
+        i = 0
+        while True:
+            # narrow section
+            r0 = wide_radii[i]
+            r1 = narrow_radii[i + 1]
             angle = math.acos(r0 / r1)
-            arc = Arc(at, r1, -math.pi + angle, math.pi)
+            arc = Arc(at, r1, -math.pi + angle, rotation_angle)
             arcs.append(arc)
+
+            # wide section
+            try:
+                r0 = narrow_radii[i + 1]
+                r1 = wide_radii[i + 1]
+                angle = math.acos(r0 / r1)
+                arc = Arc(at, r1, rotation_angle + angle, math.pi)
+                arcs.append(arc)
+            except IndexError:
+                break
+
+            i += 1
 
         # create the outermost arc
-        a0 = math.acos(
-            gap / outer_radius + radii[-1] * (1 - gap / radii[-1]) / outer_radius
-        )
-        a1 = math.acos(radii[-1] * (1 - gap / radii[-1]) / outer_radius)
-        arc = Arc(at, outer_radius, math.pi + a0, -math.pi + a1)
+        a0 = math.acos(narrow_radii[-1] / outer_radius)
+        a1 = math.acos((narrow_radii[-1] - gap) / outer_radius)
+        arc = Arc(at, outer_radius, rotation_angle + a0, rotation_angle + a1 - TWO_PI)
         arcs.append(arc)
 
-        # create the outer arcs of the other turns
-        for r0, r1 in zip(radii[-2::-1], radii[-1:0:-1]):
-            angle = math.acos((r0 - gap) / (r1 - gap))
-            arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
+        i = -1
+        while True:
+            # narrow section
+            r0 = wide_radii[i] - gap
+            r1 = narrow_radii[i] - gap
+            angle = math.acos(r0 / r1)
+            arc = Arc(at, r1, rotation_angle, -math.pi + angle)
             arcs.append(arc)
+
+            # wide section
+            try:
+                r0 = narrow_radii[i - 1] - gap
+                r1 = wide_radii[i] - gap
+                angle = math.acos(r0 / r1)
+                arc = Arc(at, r1, math.pi, rotation_angle + angle)
+                arcs.append(arc)
+            except ValueError:
+                break
+
+            i -= 1
 
         polygon = Polygon(arcs, layer)
 
@@ -79,10 +115,12 @@ class Spiral:
         if radius > 0:
             polygon = smooth_polygon(polygon, radius)
 
+        polygon.plot(fill=False)
         self.polygon = polygon
 
-        self.inner_radii = radii
-        self.outer_radii = [r - gap for r in radii[1:]] + [outer_radius]
+        # self.wide_radii = wide_radii
+        # self.wide_radii = wide_radii
+        # self.outer_radii = [r - gap for r in radii[1:]] + [outer_radius]
 
     def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
@@ -141,7 +179,7 @@ if __name__ == "__main__":
         at=Point(110e-3, 110e-3),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=5,
+        num_turns=2.5,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
