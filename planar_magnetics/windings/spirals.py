@@ -107,9 +107,12 @@ class Spiral:
 
         self.polygon = polygon
 
-        # self.wide_radii = wide_radii
-        # self.wide_radii = wide_radii
-        # self.outer_radii = [r - gap for r in radii[1:]] + [outer_radius]
+        # store the dimensions for DCR calculations
+        self.wide_inner_radii = wide_radii
+        self.wide_outer_radii = [r - gap for r in wide_radii[1:]] + [outer_radius]
+        self.narrow_inner_radii = narrow_radii
+        self.narrow_outer_radii = [r - gap for r in narrow_radii[1:]] + [outer_radius]
+        self.fractional_turns = fractional_turns
 
     def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
         """Estimate the DC resistance of the winding
@@ -125,10 +128,18 @@ class Spiral:
             float: An estimation of the DC resistance in ohms
         """
 
-        # sum the resistance of each turn
-        resistance = 0
-        for r0, r1 in zip(self.inner_radii, self.outer_radii):
-            resistance += dcr_of_annulus(thickness, r0, r1, rho)
+        # calculate the resistance of the side section
+        wide = 0
+        for r0, r1 in zip(self.wide_inner_radii, self.wide_outer_radii):
+            wide += dcr_of_annulus(thickness, r0, r1, rho)
+
+        # calculate the resistance of the narrow section
+        narrow = 0
+        for r0, r1 in zip(self.narrow_inner_radii, self.narrow_outer_radii):
+            narrow += dcr_of_annulus(thickness, r0, r1, rho)
+
+        # resistance is a weighted average
+        resistance = self.fractional_turns * narrow * (1 - self.fractional_turns) * wide
 
         return resistance
 
