@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 ### Added
-
+- Code of conduct
 
 ## [v0.1.2]
 
