@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add a "Conductor" class for calculating conductivity as a function of temperature.
+
 
 ## [v0.1.2]
 
