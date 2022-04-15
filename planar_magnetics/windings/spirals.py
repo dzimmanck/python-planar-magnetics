@@ -20,7 +20,6 @@ class Spiral:
         layer: str = "F.Cu",
         radius: float = 0.1e-3,
     ):
-
         # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
         # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
         # Industrial DC/DC Converter Module
@@ -93,8 +92,8 @@ class Spiral:
 
         return resistance
 
-    def plot(self, max_angle: float = math.pi / 36):
-        self.polygon.plot(max_angle)
+    def plot(self, ax=None, max_angle: float = math.pi / 36):
+        self.polygon.plot(ax, max_angle)
 
     def export_to_dxf(
         self,
