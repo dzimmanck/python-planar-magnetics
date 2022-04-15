@@ -60,6 +60,7 @@ class Spiral:
         r0 = inner_radius - gap
         a0 = -math.pi
         arcs = []
+        overlap = False
         for i in range(integer_turns):
             # wide section
             r1 = wide_radii[i]
@@ -74,13 +75,13 @@ class Spiral:
             arc = Arc(at, r1, angle, rotation_angle)
             if angle > rotation_angle:  # the linear sections of the spiral overlap
                 x = -r0
-                y = -x * math.tan(rotation_angle + PI_OVER_TWO)
+                y = x * math.tan(rotation_angle + math.pi)
                 point = Point(x, y) + at
-                print()
                 arcs.append(point)
-                # arcs.append(arc.start)
+                overlap = True
             else:
                 arcs.append(arc)
+                overlap = False
 
             # update r0 and a0 for next turn
             r0 = r1
@@ -102,7 +103,10 @@ class Spiral:
             angle = math.acos(r0 / r1) - math.pi
             arc = Arc(at, r1, rotation_angle, angle)
             if angle > rotation_angle:
-                arcs.append(arc.end)
+                x = -r0
+                y = x * math.tan(rotation_angle + math.pi)
+                point = Point(x, y) + at
+                arcs.append(point)
             else:
                 arcs.append(arc)
 
@@ -110,8 +114,16 @@ class Spiral:
             r1 = r0
             a0 = math.pi
 
-        Polygon(arcs).plot(fill=False)
         polygon = Polygon(arcs, layer)
+
+        # plot code for debugging
+        # DELETE ME!
+        import matplotlib.pyplot as mp
+
+        path = polygon.to_pwl_path()
+        x, y = zip(*path)
+        mp.plot(x, y)
+        mp.show()
 
         # Add smoothing if a positive radius is provided
         if radius > 0:
@@ -155,8 +167,8 @@ class Spiral:
 
         return resistance
 
-    def plot(self, max_angle: float = math.pi / 36):
-        self.polygon.plot(max_angle)
+    def plot(self, ax=None, max_angle: float = math.pi / 36):
+        self.polygon.plot(ax, max_angle)
 
     def export_to_dxf(
         self,
@@ -188,10 +200,10 @@ if __name__ == "__main__":
 
     # create a spiral inductor
     spiral = Spiral(
-        at=Point(110e-3, 110e-3),
+        at=Point(0, 0),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=2.48,
+        num_turns=2.06,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0,
@@ -202,7 +214,10 @@ if __name__ == "__main__":
     # print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
 
     # dispay a preview of the spiral from Python using matplotlib
+    import matplotlib.pyplot as mp
+
     spiral.plot()
+    mp.show()
 
     # # # export this to a DXF file
     # # spiral.export_to_dxf("spiral.dxf")
