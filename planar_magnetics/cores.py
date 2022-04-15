@@ -43,10 +43,10 @@ def calculate_core_extension(area: float, radius: float, opening_width: float) -
         return 0
 
     # calculate the minimum width of the leg
-    x = math.cos(start_angle) - math.cos(end_angle)
+    x = radius * (math.cos(start_angle) - math.cos(end_angle))
 
-    # calculate the retuired extension to equalize the area
-    extension = (extension_area - x ** 2) / (2 * x)
+    # solve for the extension using the quadratic equasion
+    extension = (-2 * x + math.sqrt(4 * x ** 2 + 4 * extension_area)) / 2
 
     return extension
 
@@ -96,6 +96,7 @@ class Core:
             radius=self.outerpost_radius,
             opening_width=termination_width + 2 * edge_to_trace + 2 * edge_to_core,
         )
+
         cutout_extension = extension + edge_to_core
 
         # calculate the arcs
