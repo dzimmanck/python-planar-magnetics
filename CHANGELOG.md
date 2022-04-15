@@ -10,9 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 ### Added
+
 - Code of conduct
 - Add a "Conductor" class for calculating conductivity as a function of temperature.
-
+- Add a "Transformer" class for multi-layer spiral based transformer designs
 
 ## [v0.1.2]
 
