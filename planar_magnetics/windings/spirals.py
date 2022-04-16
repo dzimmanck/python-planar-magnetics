@@ -60,7 +60,6 @@ class Spiral:
         r0 = inner_radius - gap
         a0 = -math.pi
         arcs = []
-        overlap = False
         for i in range(integer_turns):
             # wide section
             r1 = wide_radii[i]
@@ -78,52 +77,52 @@ class Spiral:
                 y = x * math.tan(rotation_angle + math.pi)
                 point = Point(x, y) + at
                 arcs.append(point)
-                overlap = True
+                r0 /= math.cos(rotation_angle + math.pi)
             else:
                 arcs.append(arc)
-                overlap = False
+                r0 = r1
 
-            # update r0 and a0 for next turn
-            r0 = r1
+            # a0 for the next rotation
             a0 = rotation_angle
 
-        # create the outer arcs
-        r1 = outer_radius
-        a0 = rotation_angle + math.acos(narrow_radii[-1] / outer_radius) + TWO_PI
-        for i in range(integer_turns, 0, -1):
-            # wide section
-            r0 = narrow_radii[i] - gap
-            angle = math.acos(r0 / r1)
-            arc = Arc(at, r1, a0, rotation_angle + angle)
-            arcs.append(arc)
+        # create the outermost arc
+        a0 = rotation_angle + math.acos(r0 / outer_radius) + TWO_PI
+        a1 = rotation_angle + math.acos((r0 - gap) / outer_radius)
+        arc = Arc(at, outer_radius, a0, a1)
+        arcs.append(arc)
 
-            # narrow section
-            r0 = wide_radii[i - 1] - gap
-            r1 = narrow_radii[i] - gap
-            angle = math.acos(r0 / r1) - math.pi
-            arc = Arc(at, r1, rotation_angle, angle)
-            if angle > rotation_angle:
-                x = -r0
-                y = x * math.tan(rotation_angle + math.pi)
+        # create the outer arcs from the inner arcs
+        outer_arcs = []
+        for inner_arc in arcs[-2:1:-1]:
+            if isinstance(inner_arc, Point):
+                r = abs(inner_arc - at) - gap
+                x = r * math.cos(rotation_angle)
+                y = r * math.sin(rotation_angle)
                 point = Point(x, y) + at
-                arcs.append(point)
-            else:
-                arcs.append(arc)
+                outer_arcs.append(point)
+                continue
 
-            # update for the next turn
-            r1 = r0
-            a0 = math.pi
+            arc = Arc(
+                at, inner_arc.radius - gap, inner_arc.end_angle, inner_arc.start_angle
+            )
+            outer_arcs.append(arc)
+
+        if isinstance(arcs[1], Point):
+            r = abs(arcs[1] - at) - gap
+            x = r * math.cos(rotation_angle)
+            y = r * math.sin(rotation_angle)
+            point = Point(x, y) + at
+            outer_arcs.append(point)
+        else:
+            r0 = inner_radius - gap
+            r1 = narrow_radii[1] - gap
+            angle = math.acos(r0 / r1)
+            arc = Arc(at, r1, arcs[1].end_angle, angle - math.pi)
+            outer_arcs.append(arc)
+
+        arcs.extend(outer_arcs)
 
         polygon = Polygon(arcs, layer)
-
-        # plot code for debugging
-        # DELETE ME!
-        import matplotlib.pyplot as mp
-
-        path = polygon.to_pwl_path()
-        x, y = zip(*path)
-        mp.plot(x, y)
-        mp.show()
 
         # Add smoothing if a positive radius is provided
         if radius > 0:
@@ -203,7 +202,7 @@ if __name__ == "__main__":
         at=Point(0, 0),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=2.06,
+        num_turns=2,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0,
