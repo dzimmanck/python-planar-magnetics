@@ -63,41 +63,70 @@ class Spiral:
         for i in range(integer_turns):
             # wide section
             r1 = wide_radii[i]
-            angle = math.acos(r0 / r1)
-            arc = Arc(at, r1, a0 + angle, math.pi)
-            arcs.append(arc)
+            angle = math.acos(r0 / r1) + a0
+            if angle > math.pi:
+                x = -r1
+                y = -(
+                    r1 * math.tan(rotation_angle - PI_OVER_TWO)
+                    - r0 * math.sin(math.pi - rotation_angle)
+                    - r0
+                    * math.cos(math.pi - rotation_angle)
+                    * math.tan(rotation_angle - PI_OVER_TWO)
+                )  # TODO: can this expression be simplified?
+
+                point = Point(x, y) + at
+
+                # If this point extends past the next radius, then it is not needed as we will
+                # just use the starting point of the next arc
+                if abs(point - at) > narrow_radii[i + 1]:
+                    r1 = r0
+                    a0 = rotation_angle - TWO_PI
+                else:
+                    arcs.append(point)
+                    a0 = -math.pi
+            else:
+                arc = Arc(at, r1, angle, math.pi)
+                arcs.append(arc)
+                a0 = -math.pi
+
+            # if this is an integer number of turns, there is no narrow section
+            if not fractional_turns:
+                r0 = r1
+                continue
 
             # narrow section
             r0 = r1
             r1 = narrow_radii[i + 1]
-            angle = math.acos(r0 / r1) - math.pi
-            arc = Arc(at, r1, angle, rotation_angle)
+            angle = math.acos(r0 / r1) + a0
+
             if angle > rotation_angle:  # the linear sections of the spiral overlap
                 x = -r0
-                y = x * math.tan(rotation_angle + math.pi)
+                y = -math.sqrt(r1 ** 2 - r0 ** 2)
                 point = Point(x, y) + at
                 arcs.append(point)
-                r0 /= math.cos(rotation_angle + math.pi)
+                r0 = r1
+                a0 = math.atan2(y, x)
             else:
+                arc = Arc(at, r1, angle, rotation_angle)
                 arcs.append(arc)
                 r0 = r1
-
-            # a0 for the next rotation
-            a0 = rotation_angle
+                a0 = rotation_angle
 
         # create the outermost arc
-        a0 = rotation_angle + math.acos(r0 / outer_radius) + TWO_PI
-        a1 = rotation_angle + math.acos((r0 - gap) / outer_radius)
-        arc = Arc(at, outer_radius, a0, a1)
+        r1 = outer_radius
+        start_angle = math.acos(r0 / r1) + a0 + TWO_PI
+        end_angle = math.acos((r0 - gap) / r1) + a0
+        arc = Arc(at, outer_radius, start_angle, end_angle)
         arcs.append(arc)
 
         # create the outer arcs from the inner arcs
         outer_arcs = []
-        for inner_arc in arcs[-2:1:-1]:
+        for inner_arc in arcs[-2:0:-1]:
             if isinstance(inner_arc, Point):
-                r = abs(inner_arc - at) - gap
-                x = r * math.cos(rotation_angle)
-                y = r * math.sin(rotation_angle)
+                r0 = abs(inner_arc - at)
+                r1 = r0 - gap
+                x = inner_arc.x * r1 / r0
+                y = inner_arc.y * r1 / r0
                 point = Point(x, y) + at
                 outer_arcs.append(point)
                 continue
@@ -106,21 +135,16 @@ class Spiral:
                 at, inner_arc.radius - gap, inner_arc.end_angle, inner_arc.start_angle
             )
             outer_arcs.append(arc)
-
-        if isinstance(arcs[1], Point):
-            r = abs(arcs[1] - at) - gap
-            x = r * math.cos(rotation_angle)
-            y = r * math.sin(rotation_angle)
-            point = Point(x, y) + at
-            outer_arcs.append(point)
-        else:
-            r0 = inner_radius - gap
-            r1 = narrow_radii[1] - gap
-            angle = math.acos(r0 / r1)
-            arc = Arc(at, r1, arcs[1].end_angle, angle - math.pi)
-            outer_arcs.append(arc)
-
         arcs.extend(outer_arcs)
+
+        # # DEBUG CODE
+        # import matplotlib.pyplot as mp
+
+        # mp.axis("equal")
+        # path = Polygon(arcs).to_pwl_path()
+        # x, y = zip(*path)
+        # mp.plot(x, y)
+        # mp.show()
 
         polygon = Polygon(arcs, layer)
 
@@ -202,10 +226,10 @@ if __name__ == "__main__":
         at=Point(0, 0),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=2,
+        num_turns=2.98,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
-        radius=0,
+        radius=0.3e-3,
     )
 
     # # estimate the dc resistance of this spiral assuming 2 oz copper
