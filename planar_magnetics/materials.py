@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Conductor:
     resistivity: float
     temperature_coeff: float
+    permeability: float
 
     def get_resistivity(self, temperature: float):
 
@@ -12,4 +13,4 @@ class Conductor:
 
 
 # define some common materials as constants
-COPPER = Conductor(1.68e-8, 0.0038)
+COPPER = Conductor(1.68e-8, 0.0038, 1.256629e-6)
