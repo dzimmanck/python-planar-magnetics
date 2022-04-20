@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Code of conduct
 - Add a "Conductor" class for calculating conductivity as a function of temperature.
 - Add a "Transformer" class for multi-layer spiral based transformer designs
+- Add `frequency_to_skin_depth` and `skin_depth_to_frequency` utility functions
 
 ## [v0.1.2]
 
