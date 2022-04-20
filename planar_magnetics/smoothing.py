@@ -57,27 +57,40 @@ def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
     else:
         arc_angle = arc.start_angle + PI_OVER_TWO
 
-    # calculate the orientation of the corner relative to the line segment
-    # and use to determine how to calculate the delta for the distance arithmetic bellow
-    if get_quadrant(arc_angle - segment_angle + PI_OVER_TWO) > 2:
-        delta = p2 - p1  # positive orientation
-        positive_orientation = True
-    else:
-        delta = p1 - p2  # negative orientation
-        positive_orientation = False
-
-    # calculate the amplitude of the line segment
-    R = abs(delta)
-
     # calculate the distance from the center of the arc to the center of the corner
     # if the segment intersects from the inside of the circle, it will be arc.radius - radius
     # if the segment intersects from the outside of the circle, it will be arc.radius + radius
-    if abs(point - arc.center) < arc.radius:
-        center_to_center = arc.radius - radius
-        corner_inside_arc = True
-    else:
+    a0 = math.atan2(p2.y, p2.x)
+    if segment_angle > a0 + PI_OVER_TWO or segment_angle < a0 - PI_OVER_TWO:
         center_to_center = arc.radius + radius
         corner_inside_arc = False
+    else:
+        center_to_center = arc.radius - radius
+        corner_inside_arc = True
+
+    # if the segment is already tangential, return None
+    if math.isclose(segment_angle, arc_angle):
+        return None
+
+    # calculate the orientation of the corner relative to the line segment
+    # and use to determine how to calculate the delta for the distance arithmetic bellow
+    if arc.rotates_clockwise():
+        if corner_inside_arc:
+            delta = p2 - p1  # positive orientation
+            positive_orientation = True
+        else:
+            delta = p1 - p2  # negative orientation
+            positive_orientation = False
+    else:
+        if corner_inside_arc:
+            delta = p1 - p2  # negative orientation
+            positive_orientation = False
+        else:
+            delta = p2 - p1  # positive orientation
+            positive_orientation = True
+
+    # calculate the amplitude of the line segment
+    R = abs(delta)
 
     # calculate the angle of the vector from center to center
     alpha = math.atan2(delta.y, -delta.x)
@@ -104,23 +117,37 @@ def smooth_point_to_arc(point: Point, arc: Arc, radius: float):
     center = Point(x, y) + arc.center
 
     # derive the start and end angles
-    start_angle = PI_OVER_TWO + math.atan2(delta.y, delta.x)
+    if positive_orientation:
+        start_angle = segment_angle + PI_OVER_TWO
+    else:
+        start_angle = segment_angle - PI_OVER_TWO
 
     if corner_inside_arc:
         end_angle = angle
     else:
-        end_angle = angle + math.pi
+        if angle < 0:
+            end_angle = angle + math.pi
+        else:
+            end_angle = angle - math.pi
 
     # make sure arc rotates in correct direction
     # positive orientations need to rotate clockwise
     if positive_orientation:
-        while start_angle < end_angle:
+        if start_angle > end_angle:
+            return Arc(center, radius, start_angle, end_angle)
+        elif start_angle < 0:
             start_angle += TWO_PI
+        else:
+            end_angle -= TWO_PI
+        return Arc(center, radius, start_angle, end_angle)
     else:
-        while start_angle > end_angle:
+        if start_angle < end_angle:
+            return Arc(center, radius, start_angle, end_angle)
+        elif start_angle > 0:
             start_angle -= TWO_PI
-
-    return Arc(center, radius, start_angle, end_angle)
+        else:
+            end_angle += TWO_PI
+        return Arc(center, radius, start_angle, end_angle)
 
 
 def round_corner(arc1: Arc, arc2: Arc, radius: float):
@@ -160,6 +187,14 @@ def round_corner(arc1: Arc, arc2: Arc, radius: float):
         start_angle = corner.end_angle
     else:
         start_angle = corner.end_angle - math.pi
+
+    # correct rotation
+    if arc2.rotates_clockwise():
+        while start_angle < arc2.end_angle:
+            start_angle += TWO_PI
+    else:
+        while start_angle > arc2.end_angle:
+            start_angle -= TWO_PI
 
     arcs += [
         corner,

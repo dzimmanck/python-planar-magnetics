@@ -45,9 +45,7 @@ class Spiral:
 
         # verify that the minimum trace width is greater than 2 x min radius
         min_trace_width = (
-            narrow_radii[1] - narrow_radii[0] - gap
-            if num_turns > 1
-            else outer_radius - inner_radius
+            narrow_radii[1] - narrow_radii[0] - gap if num_turns > 1 else outer_radius
         )
         assert (
             min_trace_width > 2 * radius
@@ -152,6 +150,15 @@ class Spiral:
         if radius > 0:
             polygon = smooth_polygon(polygon, radius)
 
+        # # DEBUG CODE
+        # import matplotlib.pyplot as mp
+
+        # mp.axis("equal")
+        # path = polygon.to_pwl_path()
+        # x, y = zip(*path)
+        # mp.plot(x, y)
+        # mp.show()
+
         self.polygon = polygon
 
         # store the dimensions for DCR calculations
@@ -226,7 +233,7 @@ if __name__ == "__main__":
         at=Point(0, 0),
         inner_radius=6e-3,
         outer_radius=12e-3,
-        num_turns=2.98,
+        num_turns=2.2,
         gap=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
@@ -236,7 +243,7 @@ if __name__ == "__main__":
     # dcr = spiral.estimate_dcr(thickness=weight_to_thickness(2))
     # print(f"Estimated DCR of this spiral is {dcr*1e3} mOhms")
 
-    # dispay a preview of the spiral from Python using matplotlib
+    # display a preview of the spiral from Python using matplotlib
     import matplotlib.pyplot as mp
 
     spiral.plot()
