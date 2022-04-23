@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+-Minor code cleanups
 
 ## [v0.1.3]
 
