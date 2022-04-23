@@ -149,3 +149,29 @@ class Core:
         expression = "\n".join([centerpost, outerposts])
 
         return expression
+
+
+if __name__ == "__main__":
+    FREECADPATH = "C:/Program Files/FreeCAD 0.19/bin"
+    import sys
+
+    sys.path.append(FREECADPATH)
+    import FreeCAD as cad
+    import Part
+    import Draft
+
+    # create the center piece
+    centerpost = Part.makeCylinder(10, 4, cad.Vector(0, 0, 4))
+    topplate = Part.makeCylinder(20, 4, cad.Vector(0, 0, 8))
+    centerpiece = centerpost.fuse(topplate)
+
+    # create the outer piece
+    square = Part.makePlane(10, 10)
+    circle = Part.makeCircle(4)
+    wire = Part.Wire(circle)
+    disk = Part.Face(wire)
+
+    leg_face = square.cut(disk)
+    leg = leg_face.extrude(cad.Vector(0, 0, 10))
+
+    leg.exportStep("leg.step")
