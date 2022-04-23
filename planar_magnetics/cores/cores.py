@@ -113,7 +113,6 @@ class Core:
             sys.path.append(freecad_path)
             import FreeCAD as cad
         except Exception:
-            print(e)
             raise ImportError("You must have FeeCAD installed")
         import Part
         import Draft
