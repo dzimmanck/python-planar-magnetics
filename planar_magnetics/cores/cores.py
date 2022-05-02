@@ -1,5 +1,6 @@
 import math
 import uuid
+from planar_magnetics.materials import Ferrite, N96
 from planar_magnetics.geometry import (
     Arc,
     Point,
@@ -58,7 +59,7 @@ class Core:
         window_width: float,
         window_height: float,
         opening_width: float = None,
-        gap: float = None,
+        gap: float = 0,
     ):
 
         self.centerpost_radius = centerpost_radius
@@ -76,9 +77,6 @@ class Core:
         # calculate core dimensions
         self.outerpost_radius = centerpost_radius + window_width
 
-        # TODO:  This should be calculated to equalize flux densities
-        self.plate_thickness = 2e-3
-
         # calculate the centerpost area
         self.centerpost_area = math.pi * self.centerpost_radius ** 2
 
@@ -95,13 +93,164 @@ class Core:
             opening_width=self.opening_width,
         )
 
-        self.width = 2 * (self.outerpost_radius + extension)
+        # Calculate the plate thickness so that the plate mating surface has the same area as the
+        # centerpost area
+        self.plate_thickness = self.centerpost_area / (
+            2 * self.centerpost_radius * math.pi
+        )
+
+        self.width = 2 * (self.outerpost_radius * math.cos(start_angle) + extension)
+        self.height = self.window_height + 2 * self.plate_thickness
+
+    def get_coreloss(
+        self, B: float, f: float, ferrite: Ferrite = N96, temperature: float = 25
+    ):
+        """Calculate the coreloss using steinmetz parameters
+        """
+
+        k, alpha, beta = ferrite.get_steinmetz_parameters(temperature)
+
+        Pv = k * f ** alpha * B ** beta
+
+        return Pv * self.volume
+
+    def to_parts(
+        self,
+        freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
+        tol: float = 0.1e-3,
+        spacer_thickness: float = 0.0,
+    ):
+
+        # try and import the FreeCAD python extension
+        try:
+            import sys
+
+            sys.path.append(freecad_path)
+            import FreeCAD as cad
+        except Exception:
+            raise ImportError("You must have FeeCAD installed")
+        import Part
+
+        # create the center piece
+        circle = Part.makeCircle(1e3 * self.centerpost_radius)
+        wire = Part.Wire(circle)
+        disk = Part.Face(wire)
+        centerpost = disk.extrude(cad.Vector(0, 0, 1e3 * self.window_height / 2))
+        to_gap = self.centerpost_radius + self.window_width / 2 - self.gap / 2
+        circle = Part.makeCircle(
+            1e3 * to_gap, cad.Vector(0, 0, 1e3 * self.window_height / 2)
+        )
+        wire = Part.Wire(circle)
+        disk = Part.Face(wire)
+        topplate = disk.extrude(cad.Vector(0, 0, 1e3 * self.plate_thickness))
+        centerpiece = centerpost.fuse(topplate)
+
+        # create the top plate
+        square = Part.makePlane(
+            1e3 * self.width,
+            1e3 * self.width,
+            cad.Vector(
+                -1e3 * self.width / 2,
+                -1e3 * self.width / 2,
+                1e3 * self.window_height / 2,
+            ),
+        )
+        circle = Part.makeCircle(
+            1e3 * (to_gap + self.gap), cad.Vector(0, 0, 1e3 * self.window_height / 2)
+        )
+        wire = Part.Wire(circle)
+        disk = Part.Face(wire)
+        topplate_face = square.cut(disk)
+        topplate = topplate_face.extrude(cad.Vector(0, 0, 1e3 * self.plate_thickness))
+
+        # create the legs
+        opening_left_to_right = Part.makePlane(
+            1e3 * self.width,
+            1e3 * self.opening_width,
+            cad.Vector(
+                -1e3 * self.width / 2,
+                -1e3 * self.opening_width / 2,
+                1e3 * self.window_height / 2,
+            ),
+        )
+        opening_front_to_back = Part.makePlane(
+            1e3 * self.opening_width,
+            1e3 * self.width,
+            cad.Vector(
+                -1e3 * self.opening_width / 2,
+                -1e3 * self.width / 2,
+                1e3 * self.window_height / 2,
+            ),
+        )
+        circle = Part.makeCircle(
+            1e3 * self.outerpost_radius, cad.Vector(0, 0, 1e3 * self.window_height / 2),
+        )
+        wire = Part.Wire(circle)
+        disk = Part.Face(wire)
+        leg_face = square.cut(disk)
+        legs_face = leg_face.cut(opening_left_to_right)
+        legs_face = legs_face.cut(opening_front_to_back)
+        legs = legs_face.extrude(cad.Vector(0, 0, -1e3 * self.window_height / 2))
+
+        # fuse the legs to the top plate
+        topplate = topplate.fuse(legs)
+
+        # create the spacer
+        circle = Part.makeCircle(
+            1e3 * (self.outerpost_radius - tol),
+            cad.Vector(0, 0, 1e3 * self.window_height / 2),
+        )
+        wire = Part.Wire(circle)
+        disk = Part.Face(wire)
+        circle = Part.makeCircle(
+            1e3 * (self.centerpost_radius + tol),
+            cad.Vector(0, 0, 1e3 * self.window_height / 2),
+        )
+        wire = Part.Wire(circle)
+        cutout = Part.Face(wire)
+        washer = disk.cut(cutout)
+        spacer = washer.extrude(cad.Vector(0, 0, -1e3 * spacer_thickness))
+        circle = Part.makeCircle(
+            1e3 * (to_gap + self.gap - tol),
+            cad.Vector(0, 0, 1e3 * self.window_height / 2),
+        )
+        wire = Part.Wire(circle)
+        disk = Part.Face(wire)
+        circle = Part.makeCircle(
+            1e3 * (to_gap + tol), cad.Vector(0, 0, 1e3 * self.window_height / 2)
+        )
+        wire = Part.Wire(circle)
+        cutout = Part.Face(wire)
+        washer = disk.cut(cutout)
+        gap_spacer = washer.extrude(cad.Vector(0, 0, 1e3 * self.plate_thickness))
+        spacer = spacer.fuse(gap_spacer)
+
+        if not self.gap:
+            top_half = centerpiece.fuse(topplate)
+            top_half = top_half.removeSplitter()
+
+            return {"core": top_half, "spacer": spacer}
+        else:
+            topplate = topplate.removeSplitter()
+            centerpiece = centerpiece.removeSplitter()
+
+            return {
+                "core center": centerpiece,
+                "core outer": topplate,
+                "spacer": spacer,
+            }
+
+        # # bottom_half = top_half.mirror(cad.Vector(0, 0, 0), cad.Vector(0, 0, -1))
+
+        # core = Part.makeCompound([top_half, bottom_half])
+
+        # # scale part
+        # core = core.scale(scale)
+
+        # return core
 
     def to_step(
-        self,
-        filename: str,
-        scale: float = 1000,
-        freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
+        self, filename: str, freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
     ):
         """Export the core geometry to a step file
         """
@@ -115,72 +264,16 @@ class Core:
         except Exception:
             raise ImportError("You must have FeeCAD installed")
         import Part
-        import Draft
 
-        # create the center piece
-        circle = Part.makeCircle(self.centerpost_radius)
-        wire = Part.Wire(circle)
-        disk = Part.Face(wire)
-        centerpost = disk.extrude(cad.Vector(0, 0, self.window_height / 2))
-        to_gap = self.centerpost_radius + self.window_width / 2 - self.gap / 2
-        circle = Part.makeCircle(to_gap, cad.Vector(0, 0, self.window_height / 2))
-        wire = Part.Wire(circle)
-        disk = Part.Face(wire)
-        topplate = disk.extrude(cad.Vector(0, 0, self.plate_thickness))
-        centerpiece = centerpost.fuse(topplate)
+        parts = [part for part in self.to_parts().values() if part is not None]
+        part = Part.makeCompound(parts)
 
-        # create the top plate
-        square = Part.makePlane(
-            self.width,
-            self.width,
-            cad.Vector(-self.width / 2, -self.width / 2, self.window_height / 2),
-        )
-        circle = Part.makeCircle(
-            to_gap + self.gap, cad.Vector(0, 0, self.window_height / 2)
-        )
-        wire = Part.Wire(circle)
-        disk = Part.Face(wire)
-        topplate_face = square.cut(disk)
-        topplate = topplate_face.extrude(cad.Vector(0, 0, self.plate_thickness))
+        # top_half = parts[0]
+        # for part in parts[1:]:
+        #     top_half = top_half.fuse(part)
 
-        # create the legs
-        opening_left_to_right = Part.makePlane(
-            self.width,
-            self.opening_width,
-            cad.Vector(
-                -self.width / 2, -self.opening_width / 2, self.window_height / 2
-            ),
-        )
-        opening_front_to_back = Part.makePlane(
-            self.opening_width,
-            self.width,
-            cad.Vector(
-                -self.opening_width / 2, -self.width / 2, self.window_height / 2
-            ),
-        )
-        circle = Part.makeCircle(
-            self.outerpost_radius, cad.Vector(0, 0, self.window_height / 2)
-        )
-        wire = Part.Wire(circle)
-        disk = Part.Face(wire)
-        leg_face = square.cut(disk)
-        legs_face = leg_face.cut(opening_left_to_right)
-        legs_face = legs_face.cut(opening_front_to_back)
-        legs = legs_face.extrude(cad.Vector(0, 0, -self.window_height / 2))
-        top_half = centerpiece.fuse(topplate)
-        top_half = top_half.fuse(legs)
-        top_half = top_half.removeSplitter()
-
-        bottom_half = top_half.mirror(cad.Vector(0, 0, 0), cad.Vector(0, 0, -1))
-
-        core = Part.makeCompound([top_half, bottom_half])
-
-        # scale part
-        core = core.scale(scale)
-
-        core.exportStep(filename)
-
-        return core
+        # # bottom_half = top_half.mirror(cad.Vector(0, 0, 0), cad.Vector(0, 0, -1))
+        part.exportStep(filename)
 
     def create_pcb_cutouts(
         self, center: Point = Point(0, 0), clearance: float = 0.5e-3
@@ -206,7 +299,9 @@ class Core:
             "none",
         )
 
-        cutout_extension = self.width / 2 + clearance - outer_cutout_radius
+        cutout_extension = (
+            self.width / 2 + clearance - outer_cutout_radius * math.cos(start_angle)
+        )
 
         # calculate the arcs
         arc = Arc(center, outer_cutout_radius, start_angle, end_angle)

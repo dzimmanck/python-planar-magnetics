@@ -135,6 +135,7 @@ class Cffc:
         number_turns: int,
         voltage: float,
         classification: Classification = Classification.B4,
+        termination_width: float = None,
     ):
         origin = Point(0, 0)
 
@@ -144,7 +145,10 @@ class Cffc:
         # calculate the required creepage distance
         creapage = calculate_creepage(voltage, classification)
 
-        self.termination_width = outer_radius - inner_radius
+        if termination_width is None:
+            self.termination_width = outer_radius - inner_radius
+        else:
+            self.termination_width = termination_width
 
         self.number_turns = number_turns
         self.number_layers = number_turns + 1
