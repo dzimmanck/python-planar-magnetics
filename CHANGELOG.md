@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 ### Added
+
+## [v0.1.4]
+
+### Fixed
+
+### Added
 -Change convention to assume dimensions are specified in mm rather than m
 -Add support for coreloss calculations
 -Add support for more complex CAD part generation for cores
