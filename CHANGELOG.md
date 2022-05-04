@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -Minor code cleanups and API changes
 -Some documentation cleanup
 -Change the estimate_est method to be inherited from a base Winding class and to use materials
+-Update version in setup.py file
 
 ## [v0.1.3]
 
