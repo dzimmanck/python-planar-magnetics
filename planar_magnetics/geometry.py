@@ -61,6 +61,9 @@ class Point:
     def __ne__(self, other: Point) -> bool:
         return not self.__eq__(other)
 
+    def __mul__(self, scaler: float) -> Point:
+        return Point(scaler * self.x, scaler * self.y)
+
 
 def point_from_polar(radius, angle):
     x = radius * math.cos(angle)
@@ -90,14 +93,22 @@ class Arc:
 
         # bulge (for dxf generation)
         width = abs(self.end - self.start)
-        sagitta = get_oriented_distance(self.mid, self.start, self.end)
-        self.bulge = 2 * sagitta / width
+        if self.start == self.end:
+            self.buldge = 2
+        else:
+            sagitta = get_oriented_distance(self.mid, self.start, self.end)
+            self.bulge = 2 * sagitta / width
 
     def __str__(self):
         return f"(arc (start {self.start}) (mid {self.mid}) (end {self.end}))"
 
     def __add__(self, other: Point):
-        return Arc(self.at + other, self.radius, self.start_angle, self.end_angle)
+        return Arc(self.center + other, self.radius, self.start_angle, self.end_angle)
+
+    def __mul__(self, scaler: float) -> Arc:
+        return Arc(
+            scaler * self.center, scaler * self.radius, self.start_angle, self.end_angle
+        )
 
     def rotates_clockwise(self):
         return self.end_angle < self.start_angle
@@ -180,6 +191,11 @@ class Polygon:
             [point + other for point in self.points], self.layer, self.width, self.fill
         )
 
+    def __mul__(self, scaler: float) -> Polygon:
+        return Polygon(
+            [scaler * point for point in self.points], self.layer, self.width, self.fill
+        )
+
     def __str__(self):
         points = "".join(
             [
@@ -228,6 +244,54 @@ class Polygon:
                 continue
             points.append((point.x, point.y))
         return points
+
+    def to_wire(
+        self, z=0, closed=True, freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin"
+    ):
+        """Convert the polygon to a FreeCAD Wire
+        """
+
+        # try and import the FreeCAD python extension
+        try:
+            import sys
+
+            sys.path.append(freecad_path)
+            import FreeCAD as cad
+        except Exception:
+            raise ImportError("You must have FeeCAD installed")
+        import Part
+
+        # first covert the polygon into a simple path of points
+        points = self.to_pwl_path()
+
+        verts = [cad.Vector(1e3 * p[0], 1e3 * p[1], z) for p in points]
+
+        if closed:
+            if verts[0] != verts[-1]:
+                verts.append(verts[0])
+
+        return Part.makePolygon(verts)
+
+        # # convert the path into a list of line segments
+        # segments = [
+        #     Part.LineSegment(
+        #         cad.Vector(1e3 * a[0], 1e3 * a[1], z),
+        #         cad.Vector(1e3 * b[0], 1e3 * b[1], z),
+        #     )
+        #     for a, b in zip(points[:-1], points[1:])
+        # ]
+
+        # # if points[0] != points[-1]:
+        # #     segments.append(
+        # #         Part.LineSegment(
+        # #             cad.Vector(1e3 * points[-1][0], 1e3 * points[-1][1], z),
+        # #             cad.Vector(1e3 * points[0][0], 1e3 * points[0][1], z),
+        # #         )
+        # #     )
+
+        # shapes = [segment.toShape() for segment in segments]
+
+        # return Part.Wire(shapes, closed=True)
 
     def export_to_dxf(
         self,

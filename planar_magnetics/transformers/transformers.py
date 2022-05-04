@@ -11,21 +11,18 @@ class Transformer:
     ):
         origin = Point(0, 0)
         self.termination_width = 15e-3
-        gap = 0.2e-3
 
         # create the layers
         self.layers = [
-            Spiral(origin, inner_radius, outer_radius, n, gap, l) for l, n in stackup
+            Spiral(origin, inner_radius, outer_radius, n, 0.1e-3, l) for l, n in stackup
         ]
 
         # create the core
         self.core = Core(
-            at=origin,
-            inner_radius=inner_radius,
-            outer_radius=outer_radius,
-            termination_width=self.termination_width,
-            edge_to_trace=0.635e-3,
-            edge_to_core=0.5e-3,
+            centerpost_radius=inner_radius - 1.6e-3,
+            window_width=(outer_radius - inner_radius) + 2 * 1.6e-3,
+            window_height=4e-3,
+            opening_width=10e-3,
         )
 
     def to_kicad_footprint(self, name: str):
@@ -41,8 +38,10 @@ class Transformer:
         reference = Reference(ref_loc, font_size)
         value = Value(val_loc, font_size)
 
+        cutouts = self.core.create_pcb_cutouts(Point(0, 0))
+
         # create a footprint from the various elements
-        contents = [self.core] + self.layers + [reference, value]
+        contents = cutouts + self.layers + [reference, value]
         footprint = Footprint(name, contents=contents)
 
         # write the footprint to a file

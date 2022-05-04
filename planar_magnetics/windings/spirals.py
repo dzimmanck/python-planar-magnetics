@@ -18,7 +18,7 @@ class Spiral:
         num_turns: int,
         gap: float,
         layer: str = "F.Cu",
-        radius: float = 0.1e-3,
+        radius: float = 0,
     ):
         # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
         # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
