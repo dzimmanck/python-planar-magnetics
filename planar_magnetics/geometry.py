@@ -64,6 +64,22 @@ class Point:
     def __mul__(self, scaler: float) -> Point:
         return Point(scaler * self.x, scaler * self.y)
 
+    def rotate_about(self, about: Point, angle: float):
+        """ Rotate a point around a reference point"""
+
+        delta = self - about
+        r = abs(delta)
+        a = math.atan2(delta.y, delta.x)
+        x = r * math.cos(a + angle)
+        y = r * math.sin(a + angle)
+        return Point(x, y)
+
+    def mirror_x(self):
+        return Point(self.x, -self.y)
+
+    def mirror_y(self):
+        return Point(-self.x, self.y)
+
 
 def point_from_polar(radius, angle):
     x = radius * math.cos(angle)
@@ -129,16 +145,27 @@ class Arc:
         """ Rotate an arc around a reference point"""
 
         # calculate the new center for the arc
-        offset = self.center - about
-        sin_angle = math.sin(angle)
-        cos_angle = math.cos(angle)
-        x = offset.x * cos_angle - offset.y * sin_angle
-        y = offset.y * cos_angle + offset.x * sin_angle
-        center = about + Point(x, y)
+        center = self.center.rotate_about(about, angle)
 
         return Arc(
             center, self.radius, self.start_angle + angle, self.end_angle + angle
         )
+
+    def mirror_x(self):
+        """Mirror across the x axis"""
+        center = self.center.mirror_x()
+        start_angle = -self.start_angle
+        end_angle = -self.end_angle
+
+        return Arc(center, self.radius, start_angle, end_angle)
+
+    def mirror_y(self):
+        """Mirror across the x axis"""
+        center = self.center.mirror_y()
+        start_angle = math.pi - self.start_angle
+        end_angle = math.pi - self.end_angle
+
+        return Arc(center, self.radius, start_angle, end_angle)
 
     def interpolate(self, max_angle: float = math.pi / 36):
         """Create a PWL approximation of the arc with a list of points
@@ -205,6 +232,36 @@ class Polygon:
         )
         expression = f"(fp_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
+
+    def mirror_x(self):
+        """Mirror the polygon about the x-axis"""
+
+        return Polygon(
+            [point.mirror_x() for point in self.points],
+            self.layer,
+            self.width,
+            self.fill,
+        )
+
+    def mirror_y(self):
+        """Mirror the polygon about the x-axis"""
+
+        return Polygon(
+            [point.mirror_y() for point in self.points],
+            self.layer,
+            self.width,
+            self.fill,
+        )
+
+    def rotate_about(self, about: Point, angle: float):
+        """ Rotate a poygon around a reference point"""
+
+        return Polygon(
+            [point.rotate_about(about, angle) for point in self.points],
+            self.layer,
+            self.width,
+            self.fill,
+        )
 
     def to_poly_path(self):
         """Create a true arc polypath

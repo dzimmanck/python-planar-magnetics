@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+## [v0.1.5]
+
+### Fixed
+
+### Added
+-Added ability to rotate point, arcs, polygons and windings
+-Added ability to mirror point, arcs, polygons and windings about the x or y axis
+
 ## [v0.1.4]
 
 ### Fixed

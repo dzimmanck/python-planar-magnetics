@@ -19,6 +19,7 @@ class Spiral(Winding):
         layer: A string representing what layer the spiral is on
         radius: The radius used to smooth out the corners of the shape
         at: The center of the spiral
+        rotation: The relative rotation of the spiral in radians
 
     Attributes:
         polygon: The final shape of the spiral
@@ -33,7 +34,13 @@ class Spiral(Winding):
         layer: str = "F.Cu",
         radius: float = 0,
         at: Point = Point(0, 0),
+        rotation: float = 0,
     ):
+        self.inner_radius = inner_radius
+        self.outer_radius = outer_radius
+        self.num_turns = num_turns
+        self.at = at
+
         # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
         # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
         # Industrial DC/DC Converter Module
@@ -83,7 +90,7 @@ class Spiral(Winding):
         if radius > 0:
             polygon = smooth_polygon(polygon, radius)
 
-        self.polygon = polygon
+        self.polygon = polygon.rotate_about(at, rotation)
 
         self.inner_radii = radii
         self.outer_radii = [r - spacing for r in radii[1:]] + [outer_radius]
