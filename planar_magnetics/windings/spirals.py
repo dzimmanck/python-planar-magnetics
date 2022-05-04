@@ -4,21 +4,35 @@ from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
+from planar_magnetics.materials import Conductor, COPPER
+from planar_magnetics.windings.windings import Winding
 
 
-class Spiral:
-    """Create an optimized spiral multi-turn winding on a single layer
+class Spiral(Winding):
+    """An optimized spiral multi-turn winding on a single layer
+
+    Args:
+        inner_radius: The inner radius of the spiral specified in mm
+        outer_radius: The outer radius of the spiral specified in mm
+        num_turns: The number of turns in the spiral
+        spacing: The inter-turn spacing specified in mm
+        layer: A string representing what layer the spiral is on
+        radius: The radius used to smooth out the corners of the shape
+        at: The center of the spiral
+
+    Attributes:
+        polygon: The final shape of the spiral
     """
 
     def __init__(
         self,
-        at: Point,
         inner_radius: float,
         outer_radius: float,
         num_turns: int,
-        gap: float,
+        spacing: float,
         layer: str = "F.Cu",
         radius: float = 0,
+        at: Point = Point(0, 0),
     ):
         # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
         # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
@@ -32,32 +46,35 @@ class Spiral:
 
         # verify that the minimum trace width is greater than 2 x min radius
         min_trace_width = (
-            radii[1] - radii[0] - gap if num_turns > 1 else outer_radius - inner_radius
+            radii[1] - radii[0] - spacing
+            if num_turns > 1
+            else outer_radius - inner_radius
         )
         assert (
             min_trace_width > 2 * radius
         ), f"This spiral requires a min trace width of {1e3*min_trace_width}mm, which is less than 2 x radius"
 
         # create the arcs for the inner turns
-        angle = math.acos(1 - gap / radii[0])
+        angle = math.acos(1 - spacing / radii[0])
         arcs = [Arc(at, radii[0], -math.pi + angle, math.pi)]
         for r0, r1 in zip(radii[0:-1], radii[1:]):
-            angle = math.acos(gap / r1 + r0 * (1 - gap / r0) / r1)
+            angle = math.acos(spacing / r1 + r0 * (1 - spacing / r0) / r1)
             arc = Arc(at, r1, -math.pi + angle, math.pi)
             arcs.append(arc)
 
         # create the outermost arc
         a0 = math.acos(
-            gap / outer_radius + radii[-1] * (1 - gap / radii[-1]) / outer_radius
+            spacing / outer_radius
+            + radii[-1] * (1 - spacing / radii[-1]) / outer_radius
         )
-        a1 = math.acos(radii[-1] * (1 - gap / radii[-1]) / outer_radius)
+        a1 = math.acos(radii[-1] * (1 - spacing / radii[-1]) / outer_radius)
         arc = Arc(at, outer_radius, math.pi + a0, -math.pi + a1)
         arcs.append(arc)
 
         # create the outer arcs of the other turns
         for r0, r1 in zip(radii[-2::-1], radii[-1:0:-1]):
-            angle = math.acos((r0 - gap) / (r1 - gap))
-            arc = Arc(at, r1 - gap, math.pi, -math.pi + angle)
+            angle = math.acos((r0 - spacing) / (r1 - spacing))
+            arc = Arc(at, r1 - spacing, math.pi, -math.pi + angle)
             arcs.append(arc)
 
         polygon = Polygon(arcs, layer)
@@ -69,21 +86,26 @@ class Spiral:
         self.polygon = polygon
 
         self.inner_radii = radii
-        self.outer_radii = [r - gap for r in radii[1:]] + [outer_radius]
+        self.outer_radii = [r - spacing for r in radii[1:]] + [outer_radius]
 
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
+    def estimate_dcr(
+        self, thickness: float, termperature: float = 25, material: Conductor = COPPER
+    ):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
         dc resistance of each turn and adding the estimated inter-turn via resistance 
         
         Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
+            thickness: The copper thickness of the layer
+            temperature: The temperature of the winding in degrees Celcius
+            material: The material used for the winding
 
         Returns:
             float: An estimation of the DC resistance in ohms
         """
+        # calculate the material resistivity
+        rho = material.get_resistivity(termperature)
 
         # sum the resistance of each turn
         resistance = 0
@@ -91,31 +113,6 @@ class Spiral:
             resistance += dcr_of_annulus(thickness, r0, r1, rho)
 
         return resistance
-
-    def plot(self, ax=None, max_angle: float = math.pi / 36):
-        self.polygon.plot(ax, max_angle)
-
-    def export_to_dxf(
-        self,
-        filename: Union[str, Path],
-        version: str = "R2000",
-        encoding: str = None,
-        fmt: str = "asc",
-    ) -> None:
-        """Export the polygon to a dxf file
-
-        Args:
-            filename: file name as string
-            version: DXF version
-            encoding: override default encoding as Python encoding string like ``'utf-8'``
-            fmt: ``'asc'`` for ASCII DXF (default) or ``'bin'`` for Binary DXF
-        """
-
-        self.polygon.export_to_dxf(filename, version, encoding, fmt)
-
-    def __str__(self):
-        """Print KiCAD S-Expression of the spiral.  Assumes units are mm."""
-        return self.polygon.__str__()
 
 
 if __name__ == "__main__":
@@ -129,7 +126,7 @@ if __name__ == "__main__":
         inner_radius=6e-3,
         outer_radius=12e-3,
         num_turns=1,
-        gap=calculate_creepage(500, 1),
+        spacing=calculate_creepage(500, 1),
         layer="F.Cu",
         radius=0.3e-3,
     )

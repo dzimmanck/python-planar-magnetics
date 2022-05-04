@@ -11,7 +11,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
--Minor code cleanups
+## [v0.1.4]
+
+### Fixed
+
+### Added
+-Change convention to assume dimensions are specified in mm rather than m
+-Add support for coreloss calculations
+-Add support for more complex CAD part generation for cores
+-Minor code cleanups and API changes
+-Some documentation cleanup
+-Change the estimate_est method to be inherited from a base Winding class and to use materials
 
 ## [v0.1.3]
 

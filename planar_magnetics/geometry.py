@@ -40,7 +40,7 @@ class Point:
     y: float
 
     def __str__(self):
-        return f"{self.x*1e3} {self.y*1e3}"
+        return f"{self.x} {self.y}"
 
     def __add__(self, other: Point) -> Point:
         return Point(self.x + other.x, self.y + other.y)
@@ -264,7 +264,7 @@ class Polygon:
         # first covert the polygon into a simple path of points
         points = self.to_pwl_path()
 
-        verts = [cad.Vector(1e3 * p[0], 1e3 * p[1], z) for p in points]
+        verts = [cad.Vector(p[0], p[1], z) for p in points]
 
         if closed:
             if verts[0] != verts[-1]:
@@ -272,28 +272,7 @@ class Polygon:
 
         return Part.makePolygon(verts)
 
-        # # convert the path into a list of line segments
-        # segments = [
-        #     Part.LineSegment(
-        #         cad.Vector(1e3 * a[0], 1e3 * a[1], z),
-        #         cad.Vector(1e3 * b[0], 1e3 * b[1], z),
-        #     )
-        #     for a, b in zip(points[:-1], points[1:])
-        # ]
-
-        # # if points[0] != points[-1]:
-        # #     segments.append(
-        # #         Part.LineSegment(
-        # #             cad.Vector(1e3 * points[-1][0], 1e3 * points[-1][1], z),
-        # #             cad.Vector(1e3 * points[0][0], 1e3 * points[0][1], z),
-        # #         )
-        # #     )
-
-        # shapes = [segment.toShape() for segment in segments]
-
-        # return Part.Wire(shapes, closed=True)
-
-    def export_to_dxf(
+    def to_dxf(
         self,
         filename: Union[str, Path],
         version: str = "R2000",

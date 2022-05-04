@@ -2,9 +2,10 @@ import math
 from planar_magnetics.geometry import Arc, Point, Polygon
 from planar_magnetics.kicad import Via
 from planar_magnetics.utils import dcr_of_annulus
+from planar_magnetics.windings.windings import Winding
 
 
-class TopTurn:
+class TopTurn(Winding):
     """Defines a top layer turn of a CFFC inductor
     """
 
@@ -63,28 +64,6 @@ class TopTurn:
         # create the polygon
         points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
         self.polygon = Polygon(points, layer)
-
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-
-        # estimate the resistance of the turn
-        turn_resistance = dcr_of_annulus(
-            thickness, self.inner_radius, self.outer_radius, rho
-        )
-
-        # TODO:  Need to add via resistance
-        return turn_resistance
 
     def __str__(self):
 
@@ -151,32 +130,6 @@ class BottomTurn:
         points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
         self.polygon = Polygon(points, layer)
 
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-
-        # estimate the resistance of the turn
-        turn_resistance = dcr_of_annulus(
-            thickness, self.inner_radius, self.outer_radius, rho
-        )
-
-        # TODO:  Need to add via resistance
-        return turn_resistance
-
-    def __str__(self):
-
-        return self.polygon.__str__()
-
 
 class InnerTurn:
     """Defines a middle layer turn of a CFFC inductor
@@ -235,31 +188,6 @@ class InnerTurn:
         points = [start_via_arc, inner_arc, end_via_arc, outer_arc]
         self.polygon = Polygon(points, layer)
 
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-
-        # estimate the resistance of the turn
-        turn_resistance = dcr_of_annulus(
-            thickness, self.inner_radius, self.outer_radius, rho
-        )
-
-        # TODO:  Need to add via resistance
-        return turn_resistance
-
-    def __str__(self):
-        return self.polygon.__str__()
-
 
 class ViaStrip:
     def __init__(
@@ -269,11 +197,11 @@ class ViaStrip:
         inner_radius: float,
         start_angle: float,
         end_angle: float,
-        size: float = 0.8e-3,
-        drill: float = 0.4e-3,
+        size: float = 0.8,
+        drill: float = 0.4,
     ):
 
-        min_spacing = 0.5e-3
+        min_spacing = 0.5
 
         # calculate how may vias we can fit in the strip
         angle = end_angle - start_angle
@@ -299,5 +227,5 @@ class ViaStrip:
 
 
 if __name__ == "__main__":
-    turn = InnerTurn(Point(0, 0), 6e-3, 12e-3, 0.5e-3, 0, math.pi / 8, 0, "F.Cu")
+    turn = InnerTurn(Point(0, 0), 6, 12, 0.5, 0, math.pi / 8, 0, "F.Cu")
     print(turn)
