@@ -272,7 +272,7 @@ class Polygon:
 
         return Part.makePolygon(verts)
 
-    def export_to_dxf(
+    def to_dxf(
         self,
         filename: Union[str, Path],
         version: str = "R2000",

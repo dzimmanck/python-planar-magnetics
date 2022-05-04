@@ -53,6 +53,20 @@ def calculate_core_extension(area: float, radius: float, opening_width: float) -
 
 
 class Core:
+    """A magnetic core object
+
+    Args:
+        centerpost_radius: The centerpost radius in mm
+        window_width: The winding window width in mm
+        window_height: The winding window height in mm
+        opening_width: The core termination opening widths in mm
+        gap: The core cap in mm
+
+    Attributes:
+        centerpost_area: The area of the centerpost in square mm
+        volume: The core volume in cubic mm
+    """
+
     def __init__(
         self,
         centerpost_radius: float,
@@ -107,6 +121,9 @@ class Core:
     ):
         """Calculate the coreloss using steinmetz parameters
         """
+
+        # This is not tested, so raise error
+        raise NotImplementedError
 
         k, alpha, beta = ferrite.get_steinmetz_parameters(temperature)
 

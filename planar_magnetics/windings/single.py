@@ -2,9 +2,10 @@ import math
 from planar_magnetics.geometry import Arc, Point, Polygon
 from planar_magnetics.kicad import Via
 from planar_magnetics.utils import dcr_of_annulus
+from planar_magnetics.windings.windings import Winding
 
 
-class TopTurn:
+class TopTurn(Winding):
     """Defines a top layer turn of a CFFC inductor
     """
 
@@ -63,28 +64,6 @@ class TopTurn:
         # create the polygon
         points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
         self.polygon = Polygon(points, layer)
-
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-
-        # estimate the resistance of the turn
-        turn_resistance = dcr_of_annulus(
-            thickness, self.inner_radius, self.outer_radius, rho
-        )
-
-        # TODO:  Need to add via resistance
-        return turn_resistance
 
     def __str__(self):
 
@@ -151,32 +130,6 @@ class BottomTurn:
         points = [termination_arc, inner_arc, via_arc, outer_arc] + termination
         self.polygon = Polygon(points, layer)
 
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-
-        # estimate the resistance of the turn
-        turn_resistance = dcr_of_annulus(
-            thickness, self.inner_radius, self.outer_radius, rho
-        )
-
-        # TODO:  Need to add via resistance
-        return turn_resistance
-
-    def __str__(self):
-
-        return self.polygon.__str__()
-
 
 class InnerTurn:
     """Defines a middle layer turn of a CFFC inductor
@@ -234,31 +187,6 @@ class InnerTurn:
         # create the polygon
         points = [start_via_arc, inner_arc, end_via_arc, outer_arc]
         self.polygon = Polygon(points, layer)
-
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-
-        # estimate the resistance of the turn
-        turn_resistance = dcr_of_annulus(
-            thickness, self.inner_radius, self.outer_radius, rho
-        )
-
-        # TODO:  Need to add via resistance
-        return turn_resistance
-
-    def __str__(self):
-        return self.polygon.__str__()
 
 
 class ViaStrip:

@@ -4,30 +4,11 @@ from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
-
-"""Exceptions are documented in the same way as classes.
-
-    The __init__ method may be documented in either the class level
-    docstring, or as a docstring on the __init__ method itself.
-
-    Either form is acceptable, but the two should not be mixed. Choose one
-    convention to document the __init__ method and be consistent with it.
-
-    Note:
-        Do not include the `self` parameter in the ``Args`` section.
-
-    Args:
-        msg (str): Human readable string describing the exception.
-        code (:obj:`int`, optional): Error code.
-
-    Attributes:
-        msg (str): Human readable string describing the exception.
-        code (int): Exception error code.
-
-    """
+from planar_magnetics.materials import Conductor, COPPER
+from planar_magnetics.windings.windings import Winding
 
 
-class Spiral:
+class Spiral(Winding):
     """An optimized spiral multi-turn winding on a single layer
 
     Args:
@@ -107,19 +88,24 @@ class Spiral:
         self.inner_radii = radii
         self.outer_radii = [r - spacing for r in radii[1:]] + [outer_radius]
 
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
+    def estimate_dcr(
+        self, thickness: float, termperature: float = 25, material: Conductor = COPPER
+    ):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
         dc resistance of each turn and adding the estimated inter-turn via resistance 
         
         Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
+            thickness: The copper thickness of the layer
+            temperature: The temperature of the winding in degrees Celcius
+            material: The material used for the winding
 
         Returns:
             float: An estimation of the DC resistance in ohms
         """
+        # calculate the material resistivity
+        rho = material.get_resistivity(termperature)
 
         # sum the resistance of each turn
         resistance = 0
@@ -127,31 +113,6 @@ class Spiral:
             resistance += dcr_of_annulus(thickness, r0, r1, rho)
 
         return resistance
-
-    def plot(self, ax=None, max_angle: float = math.pi / 36):
-        self.polygon.plot(ax, max_angle)
-
-    def export_to_dxf(
-        self,
-        filename: Union[str, Path],
-        version: str = "R2000",
-        encoding: str = None,
-        fmt: str = "asc",
-    ) -> None:
-        """Export the polygon to a dxf file
-
-        Args:
-            filename: file name as string
-            version: DXF version
-            encoding: override default encoding as Python encoding string like ``'utf-8'``
-            fmt: ``'asc'`` for ASCII DXF (default) or ``'bin'`` for Binary DXF
-        """
-
-        self.polygon.export_to_dxf(filename, version, encoding, fmt)
-
-    def __str__(self):
-        """Print KiCAD S-Expression of the spiral.  Assumes units are mm."""
-        return self.polygon.__str__()
 
 
 if __name__ == "__main__":
