@@ -15,7 +15,7 @@ def test_single_turn_resistance_estimation():
         inner_radius=inner_radius,
         outer_radius=outer_radius,
         num_turns=1,
-        gap=0.1,
+        spacing=0.1,
     )
 
     # estimate the resistance using the estimate_dcr method

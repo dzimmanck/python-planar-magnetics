@@ -10,19 +10,19 @@ class Transformer:
         self, inner_radius: float, outer_radius: float, stackup: dict,
     ):
         origin = Point(0, 0)
-        self.termination_width = 15e-3
+        self.termination_width = 15
 
         # create the layers
         self.layers = [
-            Spiral(origin, inner_radius, outer_radius, n, 0.1e-3, l) for l, n in stackup
+            Spiral(origin, inner_radius, outer_radius, n, 0.1, l) for l, n in stackup
         ]
 
         # create the core
         self.core = Core(
-            centerpost_radius=inner_radius - 1.6e-3,
-            window_width=(outer_radius - inner_radius) + 2 * 1.6e-3,
-            window_height=4e-3,
-            opening_width=10e-3,
+            centerpost_radius=inner_radius - 1.6,
+            window_width=(outer_radius - inner_radius) + 2 * 1.6,
+            window_height=4,
+            opening_width=10,
         )
 
     def to_kicad_footprint(self, name: str):
@@ -30,9 +30,9 @@ class Transformer:
         """
 
         # add the reference and value silkscreens
-        x_loc = self.core.width / 2 + 1e-3
+        x_loc = self.core.width / 2 + 1
         height_avail = (self.core.width - self.termination_width) / 2
-        font_size = min(2e-3, height_avail / 4)
+        font_size = min(2, height_avail / 4)
         val_loc = Point(x_loc, self.termination_width / 2 + height_avail / 3)
         ref_loc = Point(x_loc, self.termination_width / 2 + 2 * height_avail / 3)
         reference = Reference(ref_loc, font_size)
@@ -63,8 +63,8 @@ class Transformer:
 if __name__ == "__main__":
 
     transformer = Transformer(
-        inner_radius=3e-3,
-        outer_radius=6e-3,
+        inner_radius=3,
+        outer_radius=6,
         stackup=[("In1.Cu", 1), ("In1.Cu", 5), ("In2.Cu", 5), ("In1.Cu", 1)],
     )
 

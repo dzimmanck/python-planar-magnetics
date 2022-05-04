@@ -269,11 +269,11 @@ class ViaStrip:
         inner_radius: float,
         start_angle: float,
         end_angle: float,
-        size: float = 0.8e-3,
-        drill: float = 0.4e-3,
+        size: float = 0.8,
+        drill: float = 0.4,
     ):
 
-        min_spacing = 0.5e-3
+        min_spacing = 0.5
 
         # calculate how may vias we can fit in the strip
         angle = end_angle - start_angle
@@ -299,5 +299,5 @@ class ViaStrip:
 
 
 if __name__ == "__main__":
-    turn = InnerTurn(Point(0, 0), 6e-3, 12e-3, 0.5e-3, 0, math.pi / 8, 0, "F.Cu")
+    turn = InnerTurn(Point(0, 0), 6, 12, 0.5, 0, math.pi / 8, 0, "F.Cu")
     print(turn)

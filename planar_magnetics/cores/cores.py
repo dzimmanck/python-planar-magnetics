@@ -117,7 +117,7 @@ class Core:
     def to_parts(
         self,
         freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
-        tol: float = 0.1e-3,
+        tol: float = 0.1,
         spacer_thickness: float = 0.0,
     ):
 
@@ -132,97 +132,82 @@ class Core:
         import Part
 
         # create the center piece
-        circle = Part.makeCircle(1e3 * self.centerpost_radius)
+        circle = Part.makeCircle(self.centerpost_radius)
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
-        centerpost = disk.extrude(cad.Vector(0, 0, 1e3 * self.window_height / 2))
+        centerpost = disk.extrude(cad.Vector(0, 0, self.window_height / 2))
         to_gap = self.centerpost_radius + self.window_width / 2 - self.gap / 2
-        circle = Part.makeCircle(
-            1e3 * to_gap, cad.Vector(0, 0, 1e3 * self.window_height / 2)
-        )
+        circle = Part.makeCircle(to_gap, cad.Vector(0, 0, self.window_height / 2))
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
-        topplate = disk.extrude(cad.Vector(0, 0, 1e3 * self.plate_thickness))
+        topplate = disk.extrude(cad.Vector(0, 0, self.plate_thickness))
         centerpiece = centerpost.fuse(topplate)
 
         # create the top plate
         square = Part.makePlane(
-            1e3 * self.width,
-            1e3 * self.width,
-            cad.Vector(
-                -1e3 * self.width / 2,
-                -1e3 * self.width / 2,
-                1e3 * self.window_height / 2,
-            ),
+            self.width,
+            self.width,
+            cad.Vector(-self.width / 2, -self.width / 2, self.window_height / 2,),
         )
         circle = Part.makeCircle(
-            1e3 * (to_gap + self.gap), cad.Vector(0, 0, 1e3 * self.window_height / 2)
+            to_gap + self.gap, cad.Vector(0, 0, self.window_height / 2)
         )
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
         topplate_face = square.cut(disk)
-        topplate = topplate_face.extrude(cad.Vector(0, 0, 1e3 * self.plate_thickness))
+        topplate = topplate_face.extrude(cad.Vector(0, 0, self.plate_thickness))
 
         # create the legs
         opening_left_to_right = Part.makePlane(
-            1e3 * self.width,
-            1e3 * self.opening_width,
+            self.width,
+            self.opening_width,
             cad.Vector(
-                -1e3 * self.width / 2,
-                -1e3 * self.opening_width / 2,
-                1e3 * self.window_height / 2,
+                -self.width / 2, -self.opening_width / 2, self.window_height / 2,
             ),
         )
         opening_front_to_back = Part.makePlane(
-            1e3 * self.opening_width,
-            1e3 * self.width,
+            self.opening_width,
+            self.width,
             cad.Vector(
-                -1e3 * self.opening_width / 2,
-                -1e3 * self.width / 2,
-                1e3 * self.window_height / 2,
+                -self.opening_width / 2, -self.width / 2, self.window_height / 2,
             ),
         )
         circle = Part.makeCircle(
-            1e3 * self.outerpost_radius, cad.Vector(0, 0, 1e3 * self.window_height / 2),
+            self.outerpost_radius, cad.Vector(0, 0, self.window_height / 2),
         )
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
         leg_face = square.cut(disk)
         legs_face = leg_face.cut(opening_left_to_right)
         legs_face = legs_face.cut(opening_front_to_back)
-        legs = legs_face.extrude(cad.Vector(0, 0, -1e3 * self.window_height / 2))
+        legs = legs_face.extrude(cad.Vector(0, 0, -self.window_height / 2))
 
         # fuse the legs to the top plate
         topplate = topplate.fuse(legs)
 
         # create the spacer
         circle = Part.makeCircle(
-            1e3 * (self.outerpost_radius - tol),
-            cad.Vector(0, 0, 1e3 * self.window_height / 2),
+            self.outerpost_radius - tol, cad.Vector(0, 0, self.window_height / 2),
         )
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
         circle = Part.makeCircle(
-            1e3 * (self.centerpost_radius + tol),
-            cad.Vector(0, 0, 1e3 * self.window_height / 2),
+            self.centerpost_radius + tol, cad.Vector(0, 0, self.window_height / 2),
         )
         wire = Part.Wire(circle)
         cutout = Part.Face(wire)
         washer = disk.cut(cutout)
-        spacer = washer.extrude(cad.Vector(0, 0, -1e3 * spacer_thickness))
+        spacer = washer.extrude(cad.Vector(0, 0, -spacer_thickness))
         circle = Part.makeCircle(
-            1e3 * (to_gap + self.gap - tol),
-            cad.Vector(0, 0, 1e3 * self.window_height / 2),
+            to_gap + self.gap - tol, cad.Vector(0, 0, self.window_height / 2),
         )
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
-        circle = Part.makeCircle(
-            1e3 * (to_gap + tol), cad.Vector(0, 0, 1e3 * self.window_height / 2)
-        )
+        circle = Part.makeCircle(to_gap + tol, cad.Vector(0, 0, self.window_height / 2))
         wire = Part.Wire(circle)
         cutout = Part.Face(wire)
         washer = disk.cut(cutout)
-        gap_spacer = washer.extrude(cad.Vector(0, 0, 1e3 * self.plate_thickness))
+        gap_spacer = washer.extrude(cad.Vector(0, 0, self.plate_thickness))
         spacer = spacer.fuse(gap_spacer)
 
         if not self.gap:
@@ -275,9 +260,7 @@ class Core:
         # # bottom_half = top_half.mirror(cad.Vector(0, 0, 0), cad.Vector(0, 0, -1))
         part.exportStep(filename)
 
-    def create_pcb_cutouts(
-        self, center: Point = Point(0, 0), clearance: float = 0.5e-3
-    ):
+    def create_pcb_cutouts(self, center: Point = Point(0, 0), clearance: float = 0.5):
         """Generate cutout polygons"""
 
         # calculate the radius of the outer post cutouts
@@ -295,7 +278,7 @@ class Core:
         centerpost = Polygon(
             [Arc(center, self.centerpost_radius + clearance, -math.pi, math.pi)],
             "Edge.Cuts",
-            0.1e-3,
+            0.1,
             "none",
         )
 
@@ -308,7 +291,7 @@ class Core:
         corner1 = arc.end + Point(0, cutout_extension)
         corner3 = arc.start + Point(cutout_extension, 0)
         corner2 = Point(corner3.x, corner1.y)
-        leg1 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
+        leg1 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
@@ -316,7 +299,7 @@ class Core:
         corner1 = arc.end + Point(-cutout_extension, 0)
         corner3 = arc.start + Point(0, cutout_extension)
         corner2 = Point(corner1.x, corner3.y)
-        leg2 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
+        leg2 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
@@ -324,7 +307,7 @@ class Core:
         corner1 = arc.end + Point(0, -cutout_extension)
         corner3 = arc.start + Point(-cutout_extension, 0)
         corner2 = Point(corner3.x, corner1.y)
-        leg3 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
+        leg3 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none")
 
         start_angle += math.pi / 2
         end_angle += math.pi / 2
@@ -332,7 +315,7 @@ class Core:
         corner1 = arc.end + Point(cutout_extension, 0)
         corner3 = arc.start + Point(0, -cutout_extension)
         corner2 = Point(corner1.x, corner2.y)
-        leg4 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1e-3, "none")
+        leg4 = Polygon([arc, corner1, corner2, corner3], "Edge.Cuts", 0.1, "none")
 
         cutouts = [centerpost, leg1, leg2, leg3, leg4]
 
@@ -341,5 +324,5 @@ class Core:
 
 if __name__ == "__main__":
 
-    core = Core(8.6e-3, 6e-3, 6e-3, 3e-3, 0.5e-3)
+    core = Core(8.6, 6, 6, 3, 0.5)
     core.to_step("core.step")
