@@ -96,7 +96,7 @@ class Spiral(Winding):
         self.outer_radii = [r - spacing for r in radii[1:]] + [outer_radius]
 
     def estimate_dcr(
-        self, thickness: float, termperature: float = 25, material: Conductor = COPPER
+        self, thickness: float, temperature: float = 25, material: Conductor = COPPER
     ):
         """Estimate the DC resistance of the winding
 

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+-Fix spelling error in the spiral `estimate_dcr` method ("temperature", not "termperature")
 
 ### Added
 
