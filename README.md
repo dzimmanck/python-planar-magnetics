@@ -64,6 +64,15 @@ core = Core(
 cutouts = core.create_pcb_cutouts(clearance=0.5)
 ```
 
+If you have FreeCAD installed, `planar-magnetics` can use the Python API to programmatically draw core parts.
+
+```
+parts = core.to_parts()
+
+parts["core"].exportStep("core.step")
+```
+
+![KiCAD Footprint](https://github.com/dzimmanck/python-planar-magnetics/blob/main/images/core_step.png?raw=True)
 
 ## Example: Creating a complete inductor
 

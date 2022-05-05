@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -Fix spelling error in the spiral `estimate_dcr` method ("temperature", not "termperature")
 
 ### Added
+-Update README with information about the `Core` class
 
 ## [v0.1.5]
 
