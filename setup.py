@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="planar-magnetics",
-    version="0.1.5",
+    version="0.1.6",
     author="Donny Zimmanck",
     author_email="dzimmanck@gmail.com",
     description="Create planar magnetic structures programmatically and export to CAD tools.",

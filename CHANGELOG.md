@@ -8,10 +8,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [v0.1.6]
+
+### Fixed
 -Fix spelling error in the spiral `estimate_dcr` method ("temperature", not "termperature")
 
 ### Added
 -Update README with information about the `Core` class
+-Minor changes to CAD API
 
 ## [v0.1.5]
 
