@@ -112,7 +112,7 @@ class Spiral(Winding):
             float: An estimation of the DC resistance in ohms
         """
         # calculate the material resistivity
-        rho = material.get_resistivity(termperature)
+        rho = material.get_resistivity(temperature)
 
         # sum the resistance of each turn
         resistance = 0

@@ -4,18 +4,6 @@ from pathlib import Path
 
 
 class Winding:
-    def mirror_x(self):
-        """Mirror the winding about the x-axis"""
-        mirrored = self
-        mirrored.polygon = self.polygon.mirror_x()
-        return mirrored
-
-    def mirror_y(self):
-        """Mirror the winding about the y-axis"""
-        mirrored = self
-        mirrored.polygon = self.polygon.mirror_y()
-        return mirrored
-
     def rotate(self, angle: float):
         """Rotate a winding about its center"""
         rotated = self

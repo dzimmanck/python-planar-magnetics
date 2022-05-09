@@ -203,59 +203,64 @@ class Core:
         topplate = topplate.fuse(legs)
 
         # create the spacer
-        circle = Part.makeCircle(
-            self.outerpost_radius - tol, cad.Vector(0, 0, self.window_height / 2),
-        )
-        wire = Part.Wire(circle)
-        disk = Part.Face(wire)
-        circle = Part.makeCircle(
-            self.centerpost_radius + tol, cad.Vector(0, 0, self.window_height / 2),
-        )
-        wire = Part.Wire(circle)
-        cutout = Part.Face(wire)
-        washer = disk.cut(cutout)
-        spacer = washer.extrude(cad.Vector(0, 0, -spacer_thickness))
-        circle = Part.makeCircle(
-            to_gap + self.gap - tol, cad.Vector(0, 0, self.window_height / 2),
-        )
-        wire = Part.Wire(circle)
-        disk = Part.Face(wire)
-        circle = Part.makeCircle(to_gap + tol, cad.Vector(0, 0, self.window_height / 2))
-        wire = Part.Wire(circle)
-        cutout = Part.Face(wire)
-        washer = disk.cut(cutout)
-        gap_spacer = washer.extrude(cad.Vector(0, 0, self.plate_thickness))
-        spacer = spacer.fuse(gap_spacer)
+        if spacer_thickness > 0:
+            circle = Part.makeCircle(
+                self.outerpost_radius - tol, cad.Vector(0, 0, self.window_height / 2),
+            )
+            wire = Part.Wire(circle)
+            disk = Part.Face(wire)
+            circle = Part.makeCircle(
+                self.centerpost_radius + tol, cad.Vector(0, 0, self.window_height / 2),
+            )
+            wire = Part.Wire(circle)
+            cutout = Part.Face(wire)
+            washer = disk.cut(cutout)
+            spacer = washer.extrude(cad.Vector(0, 0, -spacer_thickness))
+            circle = Part.makeCircle(
+                to_gap + self.gap - tol, cad.Vector(0, 0, self.window_height / 2),
+            )
+            wire = Part.Wire(circle)
+            disk = Part.Face(wire)
+            circle = Part.makeCircle(
+                to_gap + tol, cad.Vector(0, 0, self.window_height / 2)
+            )
+            wire = Part.Wire(circle)
+            cutout = Part.Face(wire)
+            washer = disk.cut(cutout)
+            gap_spacer = washer.extrude(cad.Vector(0, 0, self.plate_thickness))
+            spacer = spacer.fuse(gap_spacer)
+        else:
+            spacer = None
 
         if not self.gap:
-            top_half = centerpiece.fuse(topplate)
-            top_half = top_half.removeSplitter()
-
-            return {"core": top_half, "spacer": spacer}
+            core = centerpiece.fuse(topplate)
+            core = core.removeSplitter()
+            if spacer is not None:
+                return {"core": core, "spacer": spacer}
+            else:
+                return {"core": core}
         else:
             topplate = topplate.removeSplitter()
             centerpiece = centerpiece.removeSplitter()
-
-            return {
-                "core center": centerpiece,
-                "core outer": topplate,
-                "spacer": spacer,
-            }
-
-        # # bottom_half = top_half.mirror(cad.Vector(0, 0, 0), cad.Vector(0, 0, -1))
-
-        # core = Part.makeCompound([top_half, bottom_half])
-
-        # # scale part
-        # core = core.scale(scale)
-
-        # return core
+            if spacer is not None:
+                return {
+                    "core center": centerpiece,
+                    "core outer": topplate,
+                    "spacer": spacer,
+                }
+            else:
+                return {
+                    "core center": centerpiece,
+                    "core outer": topplate,
+                }
 
     def to_step(
-        self, filename: str, freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
+        self,
+        name: str,
+        spacer_thickness: float = 0.0,
+        tol: float = 0.1,
+        freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
     ):
-        """Export the core geometry to a step file
-        """
 
         # try and import the FreeCAD python extension
         try:
@@ -267,15 +272,14 @@ class Core:
             raise ImportError("You must have FeeCAD installed")
         import Part
 
-        parts = [part for part in self.to_parts().values() if part is not None]
-        part = Part.makeCompound(parts)
+        parts = list(self.to_parts(freecad_path, tol, spacer_thickness).values())
+        top = Part.makeCompound(parts)
+        bottom = top.copy()
 
-        # top_half = parts[0]
-        # for part in parts[1:]:
-        #     top_half = top_half.fuse(part)
+        bottom = top.rotated(cad.Vector(0, 0, 0), cad.Vector(1, 0, 0), 180)
+        core = Part.makeCompound([top, bottom])
 
-        # # bottom_half = top_half.mirror(cad.Vector(0, 0, 0), cad.Vector(0, 0, -1))
-        part.exportStep(filename)
+        core.exportStep(name)
 
     def create_pcb_cutouts(self, center: Point = Point(0, 0), clearance: float = 0.5):
         """Generate cutout polygons"""
