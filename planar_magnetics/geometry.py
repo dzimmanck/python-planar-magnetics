@@ -40,7 +40,7 @@ class Point:
     y: float
 
     def __str__(self):
-        return f"{self.x*1e3} {self.y*1e3}"
+        return f"{self.x} {self.y}"
 
     def __add__(self, other: Point) -> Point:
         return Point(self.x + other.x, self.y + other.y)
@@ -60,6 +60,25 @@ class Point:
 
     def __ne__(self, other: Point) -> bool:
         return not self.__eq__(other)
+
+    def __mul__(self, scaler: float) -> Point:
+        return Point(scaler * self.x, scaler * self.y)
+
+    def rotate_about(self, about: Point, angle: float):
+        """ Rotate a point around a reference point"""
+
+        delta = self - about
+        r = abs(delta)
+        a = math.atan2(delta.y, delta.x)
+        x = r * math.cos(a + angle)
+        y = r * math.sin(a + angle)
+        return Point(x, y)
+
+    def mirror_x(self):
+        return Point(self.x, -self.y)
+
+    def mirror_y(self):
+        return Point(-self.x, self.y)
 
 
 def point_from_polar(radius, angle):
@@ -90,14 +109,22 @@ class Arc:
 
         # bulge (for dxf generation)
         width = abs(self.end - self.start)
-        sagitta = get_oriented_distance(self.mid, self.start, self.end)
-        self.bulge = 2 * sagitta / width
+        if self.start == self.end:
+            self.buldge = 2
+        else:
+            sagitta = get_oriented_distance(self.mid, self.start, self.end)
+            self.bulge = 2 * sagitta / width
 
     def __str__(self):
         return f"(arc (start {self.start}) (mid {self.mid}) (end {self.end}))"
 
     def __add__(self, other: Point):
-        return Arc(self.at + other, self.radius, self.start_angle, self.end_angle)
+        return Arc(self.center + other, self.radius, self.start_angle, self.end_angle)
+
+    def __mul__(self, scaler: float) -> Arc:
+        return Arc(
+            scaler * self.center, scaler * self.radius, self.start_angle, self.end_angle
+        )
 
     def rotates_clockwise(self):
         return self.end_angle < self.start_angle
@@ -118,16 +145,27 @@ class Arc:
         """ Rotate an arc around a reference point"""
 
         # calculate the new center for the arc
-        offset = self.center - about
-        sin_angle = math.sin(angle)
-        cos_angle = math.cos(angle)
-        x = offset.x * cos_angle - offset.y * sin_angle
-        y = offset.y * cos_angle + offset.x * sin_angle
-        center = about + Point(x, y)
+        center = self.center.rotate_about(about, angle)
 
         return Arc(
             center, self.radius, self.start_angle + angle, self.end_angle + angle
         )
+
+    def mirror_x(self):
+        """Mirror across the x axis"""
+        center = self.center.mirror_x()
+        start_angle = -self.start_angle
+        end_angle = -self.end_angle
+
+        return Arc(center, self.radius, start_angle, end_angle)
+
+    def mirror_y(self):
+        """Mirror across the x axis"""
+        center = self.center.mirror_y()
+        start_angle = math.pi - self.start_angle
+        end_angle = math.pi - self.end_angle
+
+        return Arc(center, self.radius, start_angle, end_angle)
 
     def interpolate(self, max_angle: float = math.pi / 36):
         """Create a PWL approximation of the arc with a list of points
@@ -180,6 +218,11 @@ class Polygon:
             [point + other for point in self.points], self.layer, self.width, self.fill
         )
 
+    def __mul__(self, scaler: float) -> Polygon:
+        return Polygon(
+            [scaler * point for point in self.points], self.layer, self.width, self.fill
+        )
+
     def __str__(self):
         points = "".join(
             [
@@ -189,6 +232,36 @@ class Polygon:
         )
         expression = f"(fp_poly(pts{points})(layer {self.layer}) (width {self.width}) (fill {self.fill}) (tstamp {self.tstamp}))"
         return expression
+
+    def mirror_x(self):
+        """Mirror the polygon about the x-axis"""
+
+        return Polygon(
+            [point.mirror_x() for point in self.points],
+            self.layer,
+            self.width,
+            self.fill,
+        )
+
+    def mirror_y(self):
+        """Mirror the polygon about the x-axis"""
+
+        return Polygon(
+            [point.mirror_y() for point in self.points],
+            self.layer,
+            self.width,
+            self.fill,
+        )
+
+    def rotate_about(self, about: Point, angle: float):
+        """ Rotate a poygon around a reference point"""
+
+        return Polygon(
+            [point.rotate_about(about, angle) for point in self.points],
+            self.layer,
+            self.width,
+            self.fill,
+        )
 
     def to_poly_path(self):
         """Create a true arc polypath
@@ -229,7 +302,34 @@ class Polygon:
             points.append((point.x, point.y))
         return points
 
-    def export_to_dxf(
+    def to_wire(
+        self, z=0, closed=True, freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin"
+    ):
+        """Convert the polygon to a FreeCAD Wire
+        """
+
+        # try and import the FreeCAD python extension
+        try:
+            import sys
+
+            sys.path.append(freecad_path)
+            import FreeCAD as cad
+        except Exception:
+            raise ImportError("You must have FeeCAD installed")
+        import Part
+
+        # first covert the polygon into a simple path of points
+        points = self.to_pwl_path()
+
+        verts = [cad.Vector(p[0], p[1], z) for p in points]
+
+        if closed:
+            if verts[0] != verts[-1]:
+                verts.append(verts[0])
+
+        return Part.makePolygon(verts)
+
+    def to_dxf(
         self,
         filename: Union[str, Path],
         version: str = "R2000",

@@ -13,9 +13,9 @@ class Winding:
         inner_radius: float,
         outer_radius: float,
         number_layers: int,
-        gap: float = 0.5e-3,
+        gap: float = 0.5,
         termination_width: float = None,
-        viastrip_width: float = 1e-3,
+        viastrip_width: float = 1,
     ):
 
         self.number_layers = number_layers
@@ -90,8 +90,8 @@ class Winding:
                 inner_radius,
                 -initial_angle - n * rotation_per_turn,
                 -initial_angle - n * rotation_per_turn - viastrip_angle,
-                0.8e-3,
-                0.4e-3,
+                0.8,
+                0.4,
             )
             for n in range(number_layers - 1)
         ]
@@ -135,6 +135,7 @@ class Cffc:
         number_turns: int,
         voltage: float,
         classification: Classification = Classification.B4,
+        termination_width: float = None,
     ):
         origin = Point(0, 0)
 
@@ -144,7 +145,10 @@ class Cffc:
         # calculate the required creepage distance
         creapage = calculate_creepage(voltage, classification)
 
-        self.termination_width = outer_radius - inner_radius
+        if termination_width is None:
+            self.termination_width = outer_radius - inner_radius
+        else:
+            self.termination_width = termination_width
 
         self.number_turns = number_turns
         self.number_layers = number_turns + 1
@@ -160,16 +164,21 @@ class Cffc:
         )
 
         # create the core
+        edge_to_trace = 0.635
+        edge_to_core = 0.5
         self.core = Core(
-            at=origin,
-            inner_radius=inner_radius,
-            outer_radius=outer_radius,
-            termination_width=self.termination_width,
-            edge_to_trace=0.635e-3,
-            edge_to_core=0.5e-3,
+            centerpost_radius=inner_radius - edge_to_trace - edge_to_core,
+            window_width=(outer_radius - inner_radius)
+            + 2 * (edge_to_core + edge_to_trace),
+            window_height=6,
+            opening_width=self.termination_width + 2 * (edge_to_core + edge_to_trace),
+            gap=1,
         )
 
     def __str__(self):
+        cutouts = self.core.create_pcb_cutouts(Point(0, 0), 0.5)
+        windings_expr = self.winding.__str__()
+        cutouts_expr = "\n".join([cutout.__str__() for cutout in cutouts])
         expression = self.winding.__str__() + self.core.__str__()
         return expression
 
@@ -209,16 +218,22 @@ class Cffc:
         )
 
         # add the reference and value silkscreens
-        x_loc = self.core.width / 2 + 1e-3
+        x_loc = self.core.width / 2 + 1
         height_avail = (self.core.width - self.termination_width) / 2
-        font_size = min(2e-3, height_avail / 4)
+        font_size = min(2, height_avail / 4)
         val_loc = Point(x_loc, self.termination_width / 2 + height_avail / 3)
         ref_loc = Point(x_loc, self.termination_width / 2 + 2 * height_avail / 3)
         reference = Reference(ref_loc, font_size)
         value = Value(val_loc, font_size)
 
         # create a footprint from the various elements
-        contents = [self.core] + self.winding.turns + pads + [reference, value]
+        contents = (
+            self.core.create_pcb_cutouts()
+            + self.winding.turns
+            + pads
+            + [reference, value]
+        )
+
         footprint = Footprint(name, contents=contents)
 
         # write the footprint to a file
@@ -231,15 +246,13 @@ if __name__ == "__main__":
 
     from planar_magnetics.utils import weight_to_thickness
 
-    inductor = Cffc(inner_radius=4.9e-3, outer_radius=9e-3, number_turns=5, voltage=500)
+    inductor = Cffc(inner_radius=4.9, outer_radius=9, number_turns=3, voltage=500)
 
     # estimate the dc resistance of this inductor
     # using the CFFC structure, a 5 turn inductor requires 6 layers
     # assume we are using 1.5 oz on top/botton and 2oz on interior layers
     thicknesses = [
         weight_to_thickness(1.5),
-        weight_to_thickness(2),
-        weight_to_thickness(2),
         weight_to_thickness(2),
         weight_to_thickness(2),
         weight_to_thickness(1.5),
@@ -249,3 +262,5 @@ if __name__ == "__main__":
 
     # create a complete KiCAD footprint
     inductor.to_kicad_footprint("cffc_inductor")
+
+    inductor.core.to_step("core.step")

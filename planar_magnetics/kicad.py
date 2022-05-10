@@ -29,9 +29,9 @@ class Pad:
     def __str__(self):
 
         layers = " ".join(self.layers)
-        drill_expression = f"(drill {self.drill*1e3})" if self.drill else ""
+        drill_expression = f"(drill {self.drill})" if self.drill else ""
         shape = "circle" if self.pad_type == PadType.TH else "rect"
-        expression = f'(pad "{self.number}" {self.pad_type} {shape} (at {self.at}) (size {self.size*1e3} {self.size*1e3}) {drill_expression} (layers {layers}) (remove_unused_layers) (tstamp {self.tstamp}))'
+        expression = f'(pad "{self.number}" {self.pad_type} {shape} (at {self.at}) (size {self.size} {self.size}) {drill_expression} (layers {layers}) (remove_unused_layers) (tstamp {self.tstamp}))'
         return expression
 
 
@@ -52,7 +52,7 @@ class Via:
     def __str__(self):
         layers = " ".join(self.layers)
         annular_option = "(remove_unused_layers)" if self.remove_unused_layers else ""
-        return f"(via (at {self.at}) (size {self.size*1e3}) (drill {self.drill*1e3}) (layers {layers}) {annular_option} (free) (net 0) (tstamp {self.tstamp}))"
+        return f"(via (at {self.at}) (size {self.size}) (drill {self.drill}) (layers {layers}) {annular_option} (free) (net 0) (tstamp {self.tstamp}))"
 
 
 @dataclass
@@ -65,7 +65,7 @@ class Reference:
 
     def __str__(self):
 
-        expression = f'(fp_text reference "Ref**" (at {self.at}) (layer "F.SilkS") (effects (font (size {self.font_size*1e3} {self.font_size*1e3}) (thickness {self.thickness*1e3})) (justify {self.justification})) (tstamp {self.tstamp}))'
+        expression = f'(fp_text reference "Ref**" (at {self.at}) (layer "F.SilkS") (effects (font (size {self.font_size} {self.font_size}) (thickness {self.thickness})) (justify {self.justification})) (tstamp {self.tstamp}))'
 
         return expression
 
@@ -80,7 +80,7 @@ class Value:
 
     def __str__(self):
 
-        expression = f'(fp_text value "Val**" (at {self.at}) (layer "F.SilkS") (effects (font (size {self.font_size*1e3} {self.font_size*1e3}) (thickness {self.thickness*1e3})) (justify {self.justification})) (tstamp {self.tstamp}))'
+        expression = f'(fp_text value "Val**" (at {self.at}) (layer "F.SilkS") (effects (font (size {self.font_size} {self.font_size}) (thickness {self.thickness})) (justify {self.justification})) (tstamp {self.tstamp}))'
 
         return expression
 

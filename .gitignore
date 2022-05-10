@@ -131,3 +131,4 @@ dmypy.json
 # export artifact files that may be generated during testing
 *.kicad_mod
 *.dxf
+*.step

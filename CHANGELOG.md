@@ -11,10 +11,47 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+## [v0.1.6]
+
+### Fixed
+-Fix spelling error in the spiral `estimate_dcr` method ("temperature", not "termperature")
+
+### Added
+-Update README with information about the `Core` class
+-Minor changes to CAD API
+
+## [v0.1.5]
+
+### Fixed
+
+### Added
+-Added ability to rotate point, arcs, polygons and windings
+-Added ability to mirror point, arcs, polygons and windings about the x or y axis
+
+## [v0.1.4]
+
+### Fixed
+
+### Added
+-Change convention to assume dimensions are specified in mm rather than m
+-Add support for coreloss calculations
+-Add support for more complex CAD part generation for cores
+-Minor code cleanups and API changes
+-Some documentation cleanup
+-Change the estimate_est method to be inherited from a base Winding class and to use materials
+-Update version in setup.py file
+
+## [v0.1.3]
+
+### Fixed
+
+### Added
+
 - Code of conduct
 - Add a "Conductor" class for calculating conductivity as a function of temperature.
 - Add a "Transformer" class for multi-layer spiral based transformer designs
 - Add `frequency_to_skin_depth` and `skin_depth_to_frequency` utility functions
+- Add support for .step file generation of cores for 3D rendering
 
 ## [v0.1.2]
 

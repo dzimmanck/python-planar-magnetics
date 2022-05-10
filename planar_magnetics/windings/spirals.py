@@ -4,6 +4,8 @@ from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point, TWO_PI, PI_OVER_TWO
 from planar_magnetics.smoothing import smooth_polygon
 from planar_magnetics.utils import dcr_of_annulus
+from planar_magnetics.materials import Conductor, COPPER
+from planar_magnetics.windings.windings import Winding
 
 # calculate optimal turn radii using equation 10 from Conceptualization and Analysis of a
 # Next-Generation Ultra-Compact 1.5-kW PCB-Integrated Wide-Input-Voltage-Range 12V-Output
@@ -19,13 +21,25 @@ def calc_trace_widths(inner_radius, outer_radius, num_turns):
     return radii
 
 
-class Spiral:
-    """Create an optimized spiral multi-turn winding on a single layer
+class Spiral(Winding):
+    """An optimized spiral multi-turn winding on a single layer
+
+    Args:
+        inner_radius: The inner radius of the spiral specified in mm
+        outer_radius: The outer radius of the spiral specified in mm
+        num_turns: The number of turns in the spiral
+        spacing: The inter-turn spacing specified in mm
+        layer: A string representing what layer the spiral is on
+        radius: The radius used to smooth out the corners of the shape
+        at: The center of the spiral
+        rotation: The relative rotation of the spiral in radians
+
+    Attributes:
+        polygon: The final shape of the spiral
     """
 
     def __init__(
         self,
-        at: Point,
         inner_radius: float,
         outer_radius: float,
         num_turns: float,
@@ -34,6 +48,11 @@ class Spiral:
         radius: float = 0.1e-3,
     ):
         assert num_turns >= 1, "A spiral must have at least 1 turn"
+
+        self.inner_radius = inner_radius
+        self.outer_radius = outer_radius
+        self.num_turns = num_turns
+        self.at = at
 
         # unpack the turns into the integer part and fractional part
         integer_turns, fractional_turns = divmod(num_turns, 1)
@@ -168,19 +187,24 @@ class Spiral:
         self.narrow_outer_radii = [r - gap for r in narrow_radii[1:]] + [outer_radius]
         self.fractional_turns = fractional_turns
 
-    def estimate_dcr(self, thickness: float, rho: float = 1.68e-8):
+    def estimate_dcr(
+        self, thickness: float, temperature: float = 25, material: Conductor = COPPER
+    ):
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
         dc resistance of each turn and adding the estimated inter-turn via resistance 
         
         Args:
-            thickness (float): The copper thickness of the layer
-            rho (float): The conductivity of the material used in the layer
+            thickness: The copper thickness of the layer
+            temperature: The temperature of the winding in degrees Celcius
+            material: The material used for the winding
 
         Returns:
             float: An estimation of the DC resistance in ohms
         """
+        # calculate the material resistivity
+        rho = material.get_resistivity(temperature)
 
         # calculate the resistance of the side section
         wide = 0
@@ -196,31 +220,6 @@ class Spiral:
         resistance = self.fractional_turns * narrow * (1 - self.fractional_turns) * wide
 
         return resistance
-
-    def plot(self, ax=None, max_angle: float = math.pi / 36):
-        self.polygon.plot(ax, max_angle)
-
-    def export_to_dxf(
-        self,
-        filename: Union[str, Path],
-        version: str = "R2000",
-        encoding: str = None,
-        fmt: str = "asc",
-    ) -> None:
-        """Export the polygon to a dxf file
-
-        Args:
-            filename: file name as string
-            version: DXF version
-            encoding: override default encoding as Python encoding string like ``'utf-8'``
-            fmt: ``'asc'`` for ASCII DXF (default) or ``'bin'`` for Binary DXF
-        """
-
-        self.polygon.export_to_dxf(filename, version, encoding, fmt)
-
-    def __str__(self):
-        """Print KiCAD S-Expression of the spiral.  Assumes units are mm."""
-        return self.polygon.__str__()
 
 
 if __name__ == "__main__":
