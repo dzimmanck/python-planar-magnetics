@@ -25,16 +25,16 @@ def calculate_core_extension(area: float, radius: float, opening_width: float) -
     start_angle = math.asin((opening_width / 2) / radius)
     end_angle = PI_OVER_TWO - start_angle
 
-    x = math.sqrt(radius ** 2 - (opening_width / 2) ** 2)
+    x = math.sqrt(radius**2 - (opening_width / 2) ** 2)
 
     # start with the area of the square from the center to the corner
-    min_leg_area = x ** 2
+    min_leg_area = x**2
 
     # subtract the opening triangles
     min_leg_area -= x * opening_width / 2
 
     # subtract the arc
-    min_leg_area -= ((end_angle - start_angle) / TWO_PI) * (math.pi * radius ** 2)
+    min_leg_area -= ((end_angle - start_angle) / TWO_PI) * (math.pi * radius**2)
 
     # calculated the required extension area
     extension_area = area / 4 - min_leg_area
@@ -47,7 +47,7 @@ def calculate_core_extension(area: float, radius: float, opening_width: float) -
     x = radius * (math.cos(start_angle) - math.cos(end_angle))
 
     # solve for the extension using the quadratic equasion
-    extension = (-2 * x + math.sqrt(4 * x ** 2 + 4 * extension_area)) / 2
+    extension = (-2 * x + math.sqrt(4 * x**2 + 4 * extension_area)) / 2
 
     return extension
 
@@ -92,7 +92,7 @@ class Core:
         self.outerpost_radius = centerpost_radius + window_width
 
         # calculate the centerpost area
-        self.centerpost_area = math.pi * self.centerpost_radius ** 2
+        self.centerpost_area = math.pi * self.centerpost_radius**2
 
         # calculate the start angle first outer post cutout leg
         start_angle = math.asin((self.opening_width / 2) / self.outerpost_radius)
@@ -119,15 +119,14 @@ class Core:
     def get_coreloss(
         self, B: float, f: float, ferrite: Ferrite = N96, temperature: float = 25
     ):
-        """Calculate the coreloss using steinmetz parameters
-        """
+        """Calculate the coreloss using steinmetz parameters"""
 
         # This is not tested, so raise error
         raise NotImplementedError
 
         k, alpha, beta = ferrite.get_steinmetz_parameters(temperature)
 
-        Pv = k * f ** alpha * B ** beta
+        Pv = k * f**alpha * B**beta
 
         return Pv * self.volume
 
@@ -164,7 +163,11 @@ class Core:
         square = Part.makePlane(
             self.width,
             self.width,
-            cad.Vector(-self.width / 2, -self.width / 2, self.window_height / 2,),
+            cad.Vector(
+                -self.width / 2,
+                -self.width / 2,
+                self.window_height / 2,
+            ),
         )
         circle = Part.makeCircle(
             to_gap + self.gap, cad.Vector(0, 0, self.window_height / 2)
@@ -179,18 +182,23 @@ class Core:
             self.width,
             self.opening_width,
             cad.Vector(
-                -self.width / 2, -self.opening_width / 2, self.window_height / 2,
+                -self.width / 2,
+                -self.opening_width / 2,
+                self.window_height / 2,
             ),
         )
         opening_front_to_back = Part.makePlane(
             self.opening_width,
             self.width,
             cad.Vector(
-                -self.opening_width / 2, -self.width / 2, self.window_height / 2,
+                -self.opening_width / 2,
+                -self.width / 2,
+                self.window_height / 2,
             ),
         )
         circle = Part.makeCircle(
-            self.outerpost_radius, cad.Vector(0, 0, self.window_height / 2),
+            self.outerpost_radius,
+            cad.Vector(0, 0, self.window_height / 2),
         )
         wire = Part.Wire(circle)
         disk = Part.Face(wire)
@@ -205,19 +213,22 @@ class Core:
         # create the spacer
         if spacer_thickness > 0:
             circle = Part.makeCircle(
-                self.outerpost_radius - tol, cad.Vector(0, 0, self.window_height / 2),
+                self.outerpost_radius - tol,
+                cad.Vector(0, 0, self.window_height / 2),
             )
             wire = Part.Wire(circle)
             disk = Part.Face(wire)
             circle = Part.makeCircle(
-                self.centerpost_radius + tol, cad.Vector(0, 0, self.window_height / 2),
+                self.centerpost_radius + tol,
+                cad.Vector(0, 0, self.window_height / 2),
             )
             wire = Part.Wire(circle)
             cutout = Part.Face(wire)
             washer = disk.cut(cutout)
             spacer = washer.extrude(cad.Vector(0, 0, -spacer_thickness))
             circle = Part.makeCircle(
-                to_gap + self.gap - tol, cad.Vector(0, 0, self.window_height / 2),
+                to_gap + self.gap - tol,
+                cad.Vector(0, 0, self.window_height / 2),
             )
             wire = Part.Wire(circle)
             disk = Part.Face(wire)

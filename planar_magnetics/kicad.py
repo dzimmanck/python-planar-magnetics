@@ -86,11 +86,13 @@ class Value:
 
 
 class Footprint:
-    """Python representation of a KiCAD footprint
-    """
+    """Python representation of a KiCAD footprint"""
 
     def __init__(
-        self, name: str, version: str = "20211014", contents=[],
+        self,
+        name: str,
+        version: str = "20211014",
+        contents=[],
     ):
         self.name = name
         self.version = version
