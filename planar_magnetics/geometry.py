@@ -49,7 +49,7 @@ class Point:
         return Point(self.x - other.x, self.y - other.y)
 
     def __abs__(self) -> float:
-        return math.sqrt(self.x ** 2 + self.y ** 2)
+        return math.sqrt(self.x**2 + self.y**2)
 
     def __eq__(self, other: Point) -> bool:
         if not math.isclose(self.x, other.x):
@@ -65,7 +65,7 @@ class Point:
         return Point(scaler * self.x, scaler * self.y)
 
     def rotate_about(self, about: Point, angle: float):
-        """ Rotate a point around a reference point"""
+        """Rotate a point around a reference point"""
 
         delta = self - about
         r = abs(delta)
@@ -142,7 +142,7 @@ class Arc:
         )
 
     def rotate_about(self, about: Point, angle: float):
-        """ Rotate an arc around a reference point"""
+        """Rotate an arc around a reference point"""
 
         # calculate the new center for the arc
         center = self.center.rotate_about(about, angle)
@@ -168,8 +168,7 @@ class Arc:
         return Arc(center, self.radius, start_angle, end_angle)
 
     def interpolate(self, max_angle: float = math.pi / 36):
-        """Create a PWL approximation of the arc with a list of points
-        """
+        """Create a PWL approximation of the arc with a list of points"""
         points = []
         angle = self.start_angle
         if self.rotates_counterclockwise():
@@ -254,7 +253,7 @@ class Polygon:
         )
 
     def rotate_about(self, about: Point, angle: float):
-        """ Rotate a poygon around a reference point"""
+        """Rotate a poygon around a reference point"""
 
         return Polygon(
             [point.rotate_about(about, angle) for point in self.points],
@@ -264,8 +263,7 @@ class Polygon:
         )
 
     def to_poly_path(self):
-        """Create a true arc polypath
-        """
+        """Create a true arc polypath"""
         points = []
         last = None
         for point in self.points:
@@ -291,8 +289,7 @@ class Polygon:
         return points
 
     def to_pwl_path(self, max_angle: float = math.pi / 36):
-        """Create a list of tuples representing the polypath as a PWL approximation
-        """
+        """Create a list of tuples representing the polypath as a PWL approximation"""
         points = []
         for point in self.points:
 
@@ -305,8 +302,7 @@ class Polygon:
     def to_wire(
         self, z=0, closed=True, freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin"
     ):
-        """Convert the polygon to a FreeCAD Wire
-        """
+        """Convert the polygon to a FreeCAD Wire"""
 
         # try and import the FreeCAD python extension
         try:
@@ -353,8 +349,7 @@ class Polygon:
         doc.saveas(filename, encoding, fmt)
 
     def plot(self, ax=None, max_angle: float = math.pi / 36):
-        """Create a plot preview of the polygon
-        """
+        """Create a plot preview of the polygon"""
         import matplotlib.pyplot as mp
 
         path = self.to_pwl_path(max_angle)

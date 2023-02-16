@@ -100,8 +100,8 @@ class Winding:
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
+        dc resistance of each turn and adding the estimated inter-turn via resistance
+
         Args:
             thicknesses: The thickness of each layer in the winding
             rho (float): The conductivity of the material used in the layer
@@ -186,8 +186,8 @@ class Cffc:
         """Estimate the DC resistance of the winding
 
         This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
+        dc resistance of each turn and adding the estimated inter-turn via resistance
+
         Args:
             thicknesses: The thickness of each layer in the winding
             rho (float): The conductivity of the material used in the layer
@@ -199,8 +199,7 @@ class Cffc:
         return self.winding.estimate_dcr(thicknesses, rho)
 
     def to_kicad_footprint(self, name: str):
-        """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)
-        """
+        """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)"""
 
         # vias are not allowed in KiCAD footprints, so convert the via strips to through-hole pads
         pads = [

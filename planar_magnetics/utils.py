@@ -17,8 +17,7 @@ def weight_to_thickness(weight: float):
 
 
 def dcr_of_sheet(thickness: float, width: float, length: float, rho: float = 1.68e-8):
-    """Calculate the resistance of a rectangular sheet
-    """
+    """Calculate the resistance of a rectangular sheet"""
     resistance = 1e3 * (length * rho) / (width * thickness)
     return resistance
 
@@ -26,8 +25,7 @@ def dcr_of_sheet(thickness: float, width: float, length: float, rho: float = 1.6
 def dcr_of_annulus(
     thickness: float, inner_radius: float, outer_radius: float, rho: float = 1.68e-8
 ):
-    """Calculate the sheet resistance of an annulus
-    """
+    """Calculate the sheet resistance of an annulus"""
 
     assert (
         outer_radius > inner_radius

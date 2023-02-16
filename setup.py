@@ -23,6 +23,10 @@ setuptools.setup(
     ],
     packages=setuptools.find_packages(),
     install_requires=["ezdxf>=0.17.2"],
-    extras_require={"dev": ["pytest",],},
+    extras_require={
+        "dev": [
+            "pytest",
+        ],
+    },
     python_requires=">=3.7",
 )

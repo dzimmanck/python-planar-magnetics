@@ -3,8 +3,6 @@ from typing import Union
 from pathlib import Path
 from planar_magnetics.geometry import Arc, Polygon, Point
 from planar_magnetics.smoothing import smooth_polygon
-from planar_magnetics.utils import dcr_of_annulus
-from planar_magnetics.materials import Conductor, COPPER
 from planar_magnetics.windings.windings import Winding
 
 
@@ -47,7 +45,7 @@ class Spiral(Winding):
         # https://www.pes-publications.ee.ethz.ch/uploads/tx_ethpublications/7_electronics-10-02158_FINAL_Knabben.pdf
         inverse_num_turns = 1 / num_turns
         radii = [
-            (inner_radius ** (num_turns - i) * outer_radius ** i) ** inverse_num_turns
+            (inner_radius ** (num_turns - i) * outer_radius**i) ** inverse_num_turns
             for i in range(num_turns)
         ]
 
@@ -94,32 +92,6 @@ class Spiral(Winding):
 
         self.inner_radii = radii
         self.outer_radii = [r - spacing for r in radii[1:]] + [outer_radius]
-
-    def estimate_dcr(
-        self, thickness: float, temperature: float = 25, material: Conductor = COPPER
-    ):
-        """Estimate the DC resistance of the winding
-
-        This function will estimate the DC resistance of the winding by calculating the estimated
-        dc resistance of each turn and adding the estimated inter-turn via resistance 
-        
-        Args:
-            thickness: The copper thickness of the layer
-            temperature: The temperature of the winding in degrees Celcius
-            material: The material used for the winding
-
-        Returns:
-            float: An estimation of the DC resistance in ohms
-        """
-        # calculate the material resistivity
-        rho = material.get_resistivity(temperature)
-
-        # sum the resistance of each turn
-        resistance = 0
-        for r0, r1 in zip(self.inner_radii, self.outer_radii):
-            resistance += dcr_of_annulus(thickness, r0, r1, rho)
-
-        return resistance
 
 
 if __name__ == "__main__":

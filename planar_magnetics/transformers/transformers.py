@@ -12,7 +12,7 @@ class Transformer:
         inner_radius: The inner radius of the windings in mm
         outer_radius: The outer radius of the windings in mm
         stackup: A dictionary of tuples specifying the layer and number of turns for each winding
-        core_to_edge: The clearance required between the core surface and the pcb cutouts in 
+        core_to_edge: The clearance required between the core surface and the pcb cutouts in
         core_to_pcb: The distance between the core and the pcb surface in the z direction in mm
         board_thickness: The thickness of the PCB in mm
         trace_to_edge: The distance between winding edges and the edge cuts in mm
@@ -63,8 +63,7 @@ class Transformer:
         create_core_step: bool = False,
         freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
     ):
-        """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)
-        """
+        """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)"""
 
         # add the reference and value silkscreens
         x_loc = self.core.width / 2 + 1

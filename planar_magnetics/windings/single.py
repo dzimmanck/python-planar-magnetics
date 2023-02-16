@@ -1,13 +1,11 @@
 import math
 from planar_magnetics.geometry import Arc, Point, Polygon
 from planar_magnetics.kicad import Via
-from planar_magnetics.utils import dcr_of_annulus
 from planar_magnetics.windings.windings import Winding
 
 
 class TopTurn(Winding):
-    """Defines a top layer turn of a CFFC inductor
-    """
+    """Defines a top layer turn of a CFFC inductor"""
 
     def __init__(
         self,
@@ -24,6 +22,10 @@ class TopTurn(Winding):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.layer = layer
+
+        # needed for the DCR estimation method inherited from the Winding class
+        self.inner_radii = [inner_radius]
+        self.outer_radii = [outer_radius]
 
         # calculate the gap angles
         inner_gap_angle = math.asin(gap / inner_radius)
@@ -51,7 +53,10 @@ class TopTurn(Winding):
 
         # create outer arc
         outer_arc = Arc(
-            at, outer_radius, 2 * math.pi - term_angle - outer_gap_angle, term_angle,
+            at,
+            outer_radius,
+            2 * math.pi - term_angle - outer_gap_angle,
+            term_angle,
         )
 
         # create termination
@@ -70,9 +75,8 @@ class TopTurn(Winding):
         return self.polygon.__str__()
 
 
-class BottomTurn:
-    """Defines a bottom layer turn of a CFFC inductor
-    """
+class BottomTurn(Winding):
+    """Defines a bottom layer turn of a CFFC inductor"""
 
     def __init__(
         self,
@@ -89,6 +93,10 @@ class BottomTurn:
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.layer = layer
+
+        # needed for the DCR estimation method inherited from the Winding class
+        self.inner_radii = [inner_radius]
+        self.outer_radii = [outer_radius]
 
         # calculate the gap angles
         inner_gap_angle = math.asin(gap / inner_radius)
@@ -116,7 +124,10 @@ class BottomTurn:
 
         # create outer arc
         outer_arc = Arc(
-            at, outer_radius, term_angle + outer_gap_angle, 2 * math.pi - term_angle,
+            at,
+            outer_radius,
+            term_angle + outer_gap_angle,
+            2 * math.pi - term_angle,
         )
 
         # create termination
@@ -131,9 +142,8 @@ class BottomTurn:
         self.polygon = Polygon(points, layer)
 
 
-class InnerTurn:
-    """Defines a middle layer turn of a CFFC inductor
-    """
+class InnerTurn(Winding):
+    """Defines a middle layer turn of a CFFC inductor"""
 
     def __init__(
         self,
@@ -153,6 +163,10 @@ class InnerTurn:
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.layer = layer
+
+        # needed for the DCR estimation method inherited from the Winding class
+        self.inner_radii = [inner_radius]
+        self.outer_radii = [outer_radius]
 
         # calculate the gap angles
         inner_gap_angle = math.asin(gap / inner_radius)
