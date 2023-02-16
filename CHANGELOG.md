@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+-Fix [issue-16](https://github.com/dzimmanck/python-planar-magnetics/issues/16).  The estimate_dcr method is now defined in the Winding class and inherited by all winding classes.
 
 ### Added
 
