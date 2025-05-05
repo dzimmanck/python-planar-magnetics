@@ -1,8 +1,9 @@
 from __future__ import annotations
 from planar_magnetics.geometry import Point
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import uuid
 from enum import Enum
+from typing import List, Tuple, Optional, Any
 
 
 class PadType(Enum):
@@ -22,12 +23,11 @@ class Pad:
     number: int
     at: Point
     size: float
-    layers: (str) = ("*.Cu",)
-    drill: float = None
-    tstamp: uuid.UUID = uuid.uuid4()
+    layers: Tuple[str, ...] = field(default_factory=lambda: ("*.Cu",))
+    drill: Optional[float] = None
+    tstamp: uuid.UUID = field(default_factory=uuid.uuid4)
 
     def __str__(self):
-
         layers = " ".join(self.layers)
         drill_expression = f"(drill {self.drill})" if self.drill else ""
         shape = "circle" if self.pad_type == PadType.TH else "rect"
@@ -37,16 +37,15 @@ class Pad:
 
 @dataclass
 class Via:
-    at: Point = Point(0, 0)
+    at: Point = field(default_factory=lambda: Point(0, 0))
     size: float = 0.8
     drill: float = 0.4
-    layers: (str) = ("F.Cu",)
-    remove_unused_layers = True
-    tstamp: uuid.UUID = uuid.uuid4()
+    layers: Tuple[str, ...] = field(default_factory=lambda: ("F.Cu",))
+    remove_unused_layers: bool = True
+    tstamp: uuid.UUID = field(default_factory=uuid.uuid4)
 
     def to_pad(self, number: int = 1):
         """Convert to an equivalent through-hole pad"""
-
         return Pad(PadType.TH, number, self.at, self.size, ("*.Cu",), self.drill)
 
     def __str__(self):
@@ -61,12 +60,10 @@ class Reference:
     font_size: float = 1.27e-3
     thickness: float = 0.15e-3
     justification: str = "left"
-    tstamp: uuid.UUID = uuid.uuid4()
+    tstamp: uuid.UUID = field(default_factory=uuid.uuid4)
 
     def __str__(self):
-
         expression = f'(fp_text reference "Ref**" (at {self.at}) (layer "F.SilkS") (effects (font (size {self.font_size} {self.font_size}) (thickness {self.thickness})) (justify {self.justification})) (tstamp {self.tstamp}))'
-
         return expression
 
 
@@ -76,12 +73,10 @@ class Value:
     font_size: float = 1.27e-3
     thickness: float = 0.15e-3
     justification: str = "left"
-    tstamp: uuid.UUID = uuid.uuid4()
+    tstamp: uuid.UUID = field(default_factory=uuid.uuid4)
 
     def __str__(self):
-
         expression = f'(fp_text value "Val**" (at {self.at}) (layer "F.SilkS") (effects (font (size {self.font_size} {self.font_size}) (thickness {self.thickness})) (justify {self.justification})) (tstamp {self.tstamp}))'
-
         return expression
 
 
@@ -92,15 +87,14 @@ class Footprint:
         self,
         name: str,
         version: str = "20211014",
-        contents=[],
+        contents: Optional[List[Any]] = None,
     ):
         self.name = name
         self.version = version
-        self.contents = contents
+        self.contents = contents if contents is not None else []
 
     def __str__(self):
         header = f'footprint "{self.name}" (version {self.version}) (generator python_planar_magnetics)'
         contents = "\n".join([content.__str__() for content in self.contents])
         expression = f"({header} {contents})"
-
         return expression
