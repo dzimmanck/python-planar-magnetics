@@ -28,5 +28,5 @@ setuptools.setup(
             "pytest",
         ],
     },
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )
