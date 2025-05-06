@@ -4,6 +4,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 import math
 import uuid
+from planar_magnetics.config import get_freecad_path
 
 # useful geometric constants
 TWO_PI = 2 * math.pi
@@ -300,7 +301,7 @@ class Polygon:
         return points
 
     def to_wire(
-        self, z=0, closed=True, freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin"
+        self, z=0, closed=True, freecad_path: str = get_freecad_path()
     ):
         """Convert the polygon to a FreeCAD Wire"""
 
