@@ -8,6 +8,7 @@ from planar_magnetics.geometry import (
     TWO_PI,
     PI_OVER_TWO,
 )
+from planar_magnetics.config import get_freecad_path
 
 
 def calculate_core_extension(area: float, radius: float, opening_width: float) -> float:
@@ -132,7 +133,7 @@ class Core:
 
     def to_parts(
         self,
-        freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
+        freecad_path: str = get_freecad_path(),
         tol: float = 0.1,
         spacer_thickness: float = 0.0,
     ):
@@ -270,7 +271,7 @@ class Core:
         name: str,
         spacer_thickness: float = 0.0,
         tol: float = 0.1,
-        freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
+        freecad_path: str = get_freecad_path(),
     ):
 
         # try and import the FreeCAD python extension

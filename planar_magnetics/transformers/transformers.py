@@ -2,6 +2,7 @@ import math
 from planar_magnetics.geometry import Point
 from planar_magnetics.windings import Spiral
 from planar_magnetics.cores import Core
+from planar_magnetics.config import get_freecad_path
 from planar_magnetics.kicad import Footprint, Reference, Value
 
 
@@ -61,7 +62,7 @@ class Transformer:
         self,
         name: str,
         create_core_step: bool = False,
-        freecad_path: str = "C:/Program Files/FreeCAD 0.19/bin",
+        freecad_path: str = get_freecad_path(),
     ):
         """Export the Cffc inductor design as a KiCAD footprint file (*.kicad_mods)"""
 
