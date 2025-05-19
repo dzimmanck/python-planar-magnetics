@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [v0.1.7]
 
 ### Fixed
 -Fix [issue-16](https://github.com/dzimmanck/python-planar-magnetics/issues/16).  The estimate_dcr method is now defined in the Winding class and inherited by all winding classes.
 -Fix [issue-18](https://github.com/dzimmanck/python-planar-magnetics/issues/18).  Mutable default values in kicad.py dataclasses.
+-Feature [issue-21](https://github.com/dzimmanck/python-planar-magnetics/issues/21). Updated FreeCAD paths throughout package to reference a configurable environment variable.
 
 ### Added
 
